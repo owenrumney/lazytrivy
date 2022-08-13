@@ -71,16 +71,6 @@ func (c *DockerClient) ScanImage(imageName string) output.Report {
 
 	cachePath := filepath.Join(os.TempDir(), "trivycache")
 
-	// template := `{{ range . }} Target: {{ .Target }}
-	// {{ ra-nge .Vulnerabilities }}
-	//  [` + "\x1b[1m" + `{{ .Severity }}` + "\x1b[0m" + `] [{{ .VulnerabilityID }}]
-	//  {{ .Title }}
-	//    Package: {{ .PkgName }}
-	//    More Info: {{ .PrimaryURL }}
-	//
-	// {{ end }}
-	// {{ end }}`
-
 	cont, err := cli.ContainerCreate(ctx, &container.Config{
 		Image:        "aquasec/trivy",
 		Cmd:          []string{"image", "-f=json", imageName},
@@ -110,6 +100,9 @@ func (c *DockerClient) ScanImage(imageName string) output.Report {
 	}
 
 	out, err := cli.ContainerLogs(ctx, cont.ID, types.ContainerLogsOptions{ShowStdout: true, Follow: false})
+	if err != nil {
+		return output.Report{}
+	}
 
 	content := ""
 	buffer := bytes.NewBufferString(content)
@@ -118,6 +111,12 @@ func (c *DockerClient) ScanImage(imageName string) output.Report {
 	rep, err := output.FromJson(buffer.String())
 	if err != nil {
 		log.Panicln(err)
+	}
+
+	// clean up
+	err = cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true})
+	if err != nil {
+		return rep
 	}
 
 	return rep

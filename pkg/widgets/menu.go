@@ -13,15 +13,21 @@ type MenuWidget struct {
 	w, h int
 	body []string
 	v    *gocui.View
+	ctx  ctx
 }
 
-func NewMenuWidget(name string, x, y, w, h int, commands []string) *MenuWidget {
+func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
 
-	return &MenuWidget{name: name, x: x, y: y, w: w, h: h, body: commands}
+	menuItems := []string{
+		"[s]scan", "[r]emote", "[i]mage refresh", "[q]uit",
+	}
+
+	return &MenuWidget{name: name, x: x, y: y, w: w, h: h, body: menuItems, ctx: ctx}
 }
 
-func (w *MenuWidget) ViewName() string {
-	return w.v.Name()
+func (w *MenuWidget) ConfigureKeys() error {
+	// nothing to configure here
+	return nil
 }
 
 func (w *MenuWidget) Layout(g *gocui.Gui) error {
@@ -31,7 +37,7 @@ func (w *MenuWidget) Layout(g *gocui.Gui) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		_, _ = fmt.Fprint(v, fmt.Sprintf("Help: %s", strings.Join(w.body, " | ")))
+		_, _ = fmt.Fprintf(v, "Help: %s", strings.Join(w.body, " | "))
 	}
 	v.Frame = false
 	w.v = v

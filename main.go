@@ -13,6 +13,8 @@ func main() {
 		fail(err)
 	}
 
+	defer g.Close()
+
 	// create the widgets
 	if err := g.CreateWidgets(); err != nil {
 		fail(err)

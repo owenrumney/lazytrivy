@@ -9,8 +9,33 @@ type Input struct {
 	maxLength int
 }
 
-func NewInput(name string, x, y, w, maxLength int) *Input {
-	return &Input{name: name, x: x, y: y, w: w, maxLength: maxLength}
+func NewInput(name string, maxX, maxY, maxLength int, ctx ctx) (*Input, error) {
+	x1 := maxX/2 - 50
+	x2 := maxX/2 + 50
+	y1 := maxY/2 - 1
+
+	if err := ctx.SetKeyBinding("remote", gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if len(view.BufferLines()) > 0 {
+			if image, _ := view.Line(0); image != "" {
+				ctx.ScanImage(image)
+			}
+		}
+		gui.Mouse = true
+		gui.Cursor = false
+		return gui.DeleteView("remote")
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := ctx.SetKeyBinding("remote", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		gui.Mouse = true
+		gui.Cursor = false
+		return gui.DeleteView("remote")
+	}); err != nil {
+		return nil, err
+	}
+
+	return &Input{name: name, x: x1, y: y1, w: x2, maxLength: maxLength}, nil
 }
 
 func (i *Input) Layout(g *gocui.Gui) error {

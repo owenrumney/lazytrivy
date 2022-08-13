@@ -5,23 +5,24 @@ import (
 	"strings"
 
 	"github.com/awesome-gocui/gocui"
-	"github.com/owenrumney/lazytrivy/pkg/docker"
 )
 
 type ImagesWidget struct {
-	name         string
-	x, y         int
-	w, h         int
-	body         string
-	v            *gocui.View
-	changed      bool
-	imageCount   int
-	dockerClient *docker.DockerClient
+	name string
+	x, y int
+	w, h int
+	body string
+
+	changed    bool
+	imageCount int
+	ctx        ctx
+	v          *gocui.View
 }
 
-func NewImagesWidget(name string, cli *docker.DockerClient, x, y, w, h int) *ImagesWidget {
+func NewImagesWidget(name string, g ctx) *ImagesWidget {
 
-	images := cli.ListImages()
+	images := g.DockerClient().ListImages()
+	w := 0
 
 	for _, image := range images {
 		if len(image) > w {
@@ -30,21 +31,39 @@ func NewImagesWidget(name string, cli *docker.DockerClient, x, y, w, h int) *Ima
 	}
 
 	widget := &ImagesWidget{
-		name:         name,
-		x:            x,
-		y:            y,
-		w:            w,
-		h:            h,
-		body:         strings.Join(images, "\n"),
-		imageCount:   len(images),
-		dockerClient: cli,
+		name:       name,
+		x:          0,
+		y:          0,
+		w:          w,
+		h:          1,
+		body:       strings.Join(images, "\n"),
+		imageCount: len(images),
+		ctx:        g,
 	}
 
 	return widget
 }
 
-func (w *ImagesWidget) ViewName() string {
-	return w.v.Name()
+func (w *ImagesWidget) ConfigureKeys() error {
+
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.PreviousImage); err != nil {
+		return err
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.NextImage); err != nil {
+		return err
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if image := w.SelectedImage(); image != "" {
+			w.ctx.ScanImage(image)
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w *ImagesWidget) Layout(g *gocui.Gui) error {
@@ -84,6 +103,10 @@ func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, view *gocui.View) error {
 		_ = view.SetCursor(0, y-1)
 	}
 
+	if image, err := w.v.Line(y); err == nil {
+		w.ctx.SetSelectedImage(image)
+	}
+
 	w.changed = true
 	return nil
 }
@@ -96,14 +119,15 @@ func (w *ImagesWidget) NextImage(_ *gocui.Gui, view *gocui.View) error {
 		view.SetHighlight(y+1, true)
 		_ = view.SetCursor(0, y+1)
 	}
+	if image, err := w.v.Line(y); err == nil {
+		w.ctx.SetSelectedImage(image)
+	}
 
 	w.changed = true
 	return nil
 }
 
-func (w *ImagesWidget) RefreshImages() error {
-	images := w.dockerClient.ListImages()
-
+func (w *ImagesWidget) RefreshImages(images []string) error {
 	for _, image := range images {
 		if len(image) > w.w {
 			w.w = len(image) + 4
