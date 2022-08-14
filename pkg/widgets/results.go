@@ -138,3 +138,8 @@ func colouredSeverity(severity string) (string, string) {
 		return "", ""
 	}
 }
+
+// RefreshView implements Widget
+func (w *InfoWidget) RefreshView() {
+	panic("unimplemented")
+}

@@ -10,4 +10,5 @@ type ctx interface {
 	DockerClient() *docker.DockerClient
 	SetKeyBinding(viewName string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) error
 	SetSelectedImage(imageName string)
+	RefreshView(viewName string)
 }

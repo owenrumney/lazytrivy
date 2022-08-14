@@ -1,10 +1,10 @@
-package gui
+package controller
 
 import (
 	"github.com/awesome-gocui/gocui"
 )
 
-func (g *Gui) configureGlobalKeys() error {
+func (g *Controller) configureGlobalKeys() error {
 
 	if err := g.cui.SetKeybinding("", gocui.MouseLeft, gocui.ModNone, setView); err != nil {
 		return err

@@ -4,27 +4,27 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/owenrumney/lazytrivy/pkg/gui"
+	"github.com/owenrumney/lazytrivy/pkg/controller"
 )
 
 func main() {
-	g, err := gui.New()
+	c, err := controller.New()
 	if err != nil {
 		fail(err)
 	}
 
-	defer g.Close()
+	defer c.Close()
 
 	// create the widgets
-	if err := g.CreateWidgets(); err != nil {
+	if err := c.CreateWidgets(); err != nil {
 		fail(err)
 	}
 
 	// set up the initial view to be the images widget
-	g.Initialise()
+	c.Initialise()
 
 	// Enter the run loop - its all in the gui from this point on
-	if err := g.Run(); err != nil {
+	if err := c.Run(); err != nil {
 		fail(err)
 	}
 }

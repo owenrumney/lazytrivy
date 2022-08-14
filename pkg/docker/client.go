@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -19,8 +20,10 @@ import (
 )
 
 type DockerClient struct {
-	client *client.Client
-	ctx    context.Context
+	client            *client.Client
+	ctx               context.Context
+	imageNames        []string
+	trivyImagePresent bool
 }
 
 func NewDockerClient() *DockerClient {
@@ -51,6 +54,7 @@ func (c *DockerClient) ListImages() []string {
 		if image.RepoTags != nil {
 			imageName := image.RepoTags[0]
 			if strings.HasPrefix(imageName, "aquasec/trivy:") {
+				c.trivyImagePresent = true
 				continue
 			}
 			imageNames = append(imageNames, imageName)
@@ -58,15 +62,24 @@ func (c *DockerClient) ListImages() []string {
 	}
 
 	sort.Strings(imageNames)
-	return imageNames
+	c.imageNames = imageNames
+	return c.imageNames
 }
 
-func (c *DockerClient) ScanImage(imageName string) output.Report {
+func (c *DockerClient) ScanImage(imageName string) (*output.Report, error) {
 
 	ctx := context.Background()
+
+	resp, _ := c.client.ImagePull(ctx, "aquasec/trivy:latest", types.ImagePullOptions{
+		All: false,
+	})
+
+	defer func() { _ = resp.Close() }()
+	_, _ = io.Copy(ioutil.Discard, resp)
+
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	cachePath := filepath.Join(os.TempDir(), "trivycache")
@@ -83,11 +96,11 @@ func (c *DockerClient) ScanImage(imageName string) output.Report {
 		},
 	}, nil, nil, "")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	if err := cli.ContainerStart(ctx, cont.ID, types.ContainerStartOptions{}); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	statusCh, errCh := cli.ContainerWait(ctx, cont.ID, container.WaitConditionNotRunning)
@@ -101,7 +114,7 @@ func (c *DockerClient) ScanImage(imageName string) output.Report {
 
 	out, err := cli.ContainerLogs(ctx, cont.ID, types.ContainerLogsOptions{ShowStdout: true, Follow: false})
 	if err != nil {
-		return output.Report{}
+		return nil, err
 	}
 
 	content := ""
@@ -110,14 +123,34 @@ func (c *DockerClient) ScanImage(imageName string) output.Report {
 
 	rep, err := output.FromJson(buffer.String())
 	if err != nil {
-		log.Panicln(err)
+		return nil, err
 	}
 
 	// clean up
 	err = cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true})
 	if err != nil {
-		return rep
+		return nil, err
 	}
 
-	return rep
+	return rep, nil
+}
+
+func (c *DockerClient) ScanAllImages(ctx context.Context) ([]*output.Report, error) {
+
+	var reports []*output.Report
+
+	for _, imageName := range c.imageNames {
+		if report, err := c.ScanImage(imageName); err != nil {
+			return reports, err
+		} else {
+			reports = append(reports, report)
+		}
+		switch {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+
+	}
+
+	return reports, nil
 }

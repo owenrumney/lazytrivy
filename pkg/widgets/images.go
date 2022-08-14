@@ -22,7 +22,11 @@ type ImagesWidget struct {
 func NewImagesWidget(name string, g ctx) *ImagesWidget {
 
 	images := g.DockerClient().ListImages()
-	w := 0
+	w := 5
+
+	if len(images) == 0 {
+		images = append(images, "-- no images found --")
+	}
 
 	for _, image := range images {
 		if len(image) > w {
@@ -134,6 +138,7 @@ func (w *ImagesWidget) RefreshImages(images []string) error {
 		}
 	}
 	w.body = strings.Join(images, "\n")
+	fmt.Fprintf(w.v, w.body)
 	return nil
 }
 
@@ -143,4 +148,10 @@ func (w *ImagesWidget) SelectedImage() string {
 		return image
 	}
 	return ""
+}
+
+// RefreshView implements Widget
+func (w *ImagesWidget) RefreshView() {
+	w.v.Clear()
+	fmt.Fprintf(w.v, w.body)
 }

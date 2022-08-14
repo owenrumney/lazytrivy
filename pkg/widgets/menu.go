@@ -16,6 +16,11 @@ type MenuWidget struct {
 	ctx  ctx
 }
 
+// RefreshView implements Widget
+func (w *MenuWidget) RefreshView() {
+	panic("unimplemented")
+}
+
 func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
 
 	menuItems := []string{

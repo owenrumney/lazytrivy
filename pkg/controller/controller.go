@@ -1,4 +1,4 @@
-package gui
+package controller
 
 import (
 	"fmt"
@@ -9,35 +9,30 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
-type widget interface {
-	ConfigureKeys() error
-	Layout(*gocui.Gui) error
-}
-
-type Gui struct {
+type Controller struct {
 	cui           *gocui.Gui
 	dockerClient  *docker.DockerClient
-	views         map[string]widget
+	views         map[string]widgets.Widget
 	selectedImage string
 }
 
-func New() (*Gui, error) {
+func New() (*Controller, error) {
 	cui, err := gocui.NewGui(gocui.OutputNormal, true)
 	if err != nil {
 		return nil, err
 	}
-	return &Gui{
+	return &Controller{
 		cui:          cui,
 		dockerClient: docker.NewDockerClient(),
-		views:        make(map[string]widget),
+		views:        make(map[string]widgets.Widget),
 	}, nil
 }
 
-func (g *Gui) DockerClient() *docker.DockerClient {
+func (g *Controller) DockerClient() *docker.DockerClient {
 	return g.dockerClient
 }
 
-func (g *Gui) CreateWidgets() error {
+func (g *Controller) CreateWidgets() error {
 	maxX, maxY := g.cui.Size()
 
 	g.views["images"] = widgets.NewImagesWidget("images", g)
@@ -50,7 +45,7 @@ func (g *Gui) CreateWidgets() error {
 	return nil
 }
 
-func (g *Gui) SetManager() {
+func (g *Controller) SetManager() {
 	views := make([]gocui.Manager, 0, len(g.views)+1)
 	for _, v := range g.views {
 		views = append(views, v)
@@ -60,14 +55,14 @@ func (g *Gui) SetManager() {
 	g.cui.SetManager(views...)
 }
 
-func (g *Gui) Run() error {
+func (g *Controller) Run() error {
 	if err := g.cui.MainLoop(); err != nil && err != gocui.ErrQuit {
 		return err
 	}
 	return nil
 }
 
-func (g *Gui) Initialise() {
+func (g *Controller) Initialise() {
 	g.cui.Update(func(gui *gocui.Gui) error {
 		if err := g.configureGlobalKeys(); err != nil {
 			return err
@@ -84,40 +79,43 @@ func (g *Gui) Initialise() {
 	})
 }
 
-func (g *Gui) SetKeyBinding(viewName string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) error {
+func (g *Controller) SetKeyBinding(viewName string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) error {
 	return g.cui.SetKeybinding(viewName, key, mod, handler)
 }
 
-func (g *Gui) Close() {
+func (g *Controller) Close() {
 	g.cui.Close()
 }
 
-func (g *Gui) ShowCursor() {
+func (g *Controller) ShowCursor() {
 	g.cui.Cursor = true
 }
 
-func (g *Gui) HideCursor() {
+func (g *Controller) HideCursor() {
 	g.cui.Cursor = false
 }
 
-func (g *Gui) EnableMouse() {
+func (g *Controller) EnableMouse() {
 	g.cui.Mouse = true
 }
 
-func (g *Gui) DisableMouse() {
+func (g *Controller) DisableMouse() {
 	g.cui.Mouse = false
 }
 
-func (g *Gui) SetSelectedImage(selected string) {
+func (g *Controller) SetSelectedImage(selected string) {
 	g.selectedImage = selected
 }
 
-func (g *Gui) ScanImage(imageName string) {
+func (g *Controller) ScanImage(imageName string) {
 
 	go func() {
-		report := g.dockerClient.ScanImage(imageName)
+		report, err := g.dockerClient.ScanImage(imageName)
+		if err != nil {
+			return //TODO: Need to do something here
+		}
 		g.cui.Update(func(gocui *gocui.Gui) error {
-			return g.renderResultsReport(imageName, report)
+			return g.renderResultsReport(imageName, *report)
 		})
 	}()
 
@@ -156,7 +154,7 @@ func setView(g *gocui.Gui, v *gocui.View) error {
 	return err
 }
 
-func (g *Gui) scanRemote(gui *gocui.Gui, _ *gocui.View) error {
+func (g *Controller) scanRemote(gui *gocui.Gui, _ *gocui.View) error {
 
 	maxX, maxY := gui.Size()
 
@@ -177,7 +175,7 @@ func (g *Gui) scanRemote(gui *gocui.Gui, _ *gocui.View) error {
 	return nil
 }
 
-func (g *Gui) renderResultsReport(imageName string, report output.Report) error {
+func (g *Controller) renderResultsReport(imageName string, report output.Report) error {
 	if v, ok := g.views["results"]; ok {
 		v.(*widgets.InfoWidget).RenderReport(report, fmt.Sprintf(" %s ", imageName))
 		_, err := g.cui.SetCurrentView("results")
@@ -189,8 +187,17 @@ func (g *Gui) renderResultsReport(imageName string, report output.Report) error 
 	return nil
 }
 
-func (g *Gui) RefreshImages() error {
+func (g *Controller) RefreshImages() error {
 	images := g.dockerClient.ListImages()
 
 	return g.views["images"].(*widgets.ImagesWidget).RefreshImages(images)
+}
+
+func (g *Controller) RefreshView(viewName string) {
+	g.cui.Update(func(_ *gocui.Gui) error {
+		if v, ok := g.views[viewName]; ok {
+			v.RefreshView()
+		}
+		return nil
+	})
 }
