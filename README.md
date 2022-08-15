@@ -2,6 +2,8 @@
 
 Lazytrivy is a wrapper for [Trivy](https://github.com/aquasecurity/trivy) that allows you to run Trivy without remembering the command arguments.
 
+![Scan All Images](./.github/images/scan_all.png)
+
 ## Installation
 
 The quickest way to install if you have `Go` installed is to get the latest with `go install`
