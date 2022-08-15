@@ -1,0 +1,24 @@
+builds:
+  - id: lazytrivy
+    main: .
+    binary: lazytrivy
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: binary
+    name_template: "{{ .Binary}}-{{ .Os }}-{{ .Arch }}"
+
+
+release:
+  prerelease: auto
+  github:
+    owner: owenrumney
+    name: lazytrivy
