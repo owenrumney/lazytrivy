@@ -3,8 +3,10 @@ package output
 import "encoding/json"
 
 type Report struct {
-	Results     []Result
-	SeverityMap map[string][]Result
+	ImageName     string
+	Results       []Result
+	SeverityMap   map[string][]Result
+	SeverityCount map[string]int
 }
 
 type Result struct {
@@ -13,26 +15,30 @@ type Result struct {
 }
 
 type Vulnerability struct {
-	VulnerabilityID string
-	Title           string
-	Description     string
-	Severity        string
-	PkgName         string
-	PrimaryURL      string
+	VulnerabilityID  string
+	Title            string
+	Description      string
+	Severity         string
+	PkgName          string
+	PrimaryURL       string
+	InstalledVersion string
+	FixedVersion     string
 }
 
-func FromJson(content string) (*Report, error) {
+func FromJson(imageName string, content string) (*Report, error) {
 	var report Report
 	err := json.Unmarshal([]byte(content), &report)
 	if err := report.processReport(); err != nil {
 		return nil, err
 	}
+	report.ImageName = imageName
 	return &report, err
 }
 
 func (r *Report) processReport() error {
 
 	r.SeverityMap = make(map[string][]Result)
+	r.SeverityCount = make(map[string]int)
 
 	for _, result := range r.Results {
 		for _, v := range result.Vulnerabilities {
@@ -58,6 +64,7 @@ func (r *Report) processReport() error {
 			}
 			sevMap = append(sevMap, foundResult)
 			r.SeverityMap[v.Severity] = sevMap
+			r.SeverityCount[v.Severity]++
 		}
 	}
 	return nil

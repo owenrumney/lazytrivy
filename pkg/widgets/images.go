@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -60,7 +61,7 @@ func (w *ImagesWidget) ConfigureKeys() error {
 
 	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if image := w.SelectedImage(); image != "" {
-			w.ctx.ScanImage(image)
+			w.ctx.ScanImage(context.Background(), image)
 		}
 		return nil
 	}); err != nil {
@@ -118,7 +119,7 @@ func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, view *gocui.View) error {
 func (w *ImagesWidget) NextImage(_ *gocui.Gui, view *gocui.View) error {
 	_, y := view.Cursor()
 
-	if y <= w.imageCount-1 {
+	if y < w.imageCount-1 {
 		view.SetHighlight(y, false)
 		view.SetHighlight(y+1, true)
 		_ = view.SetCursor(0, y+1)
@@ -137,8 +138,24 @@ func (w *ImagesWidget) RefreshImages(images []string) error {
 			w.w = len(image) + 4
 		}
 	}
+
+	w.imageCount = len(images)
 	w.body = strings.Join(images, "\n")
-	fmt.Fprintf(w.v, w.body)
+	w.v.Clear()
+	_, _ = fmt.Fprintf(w.v, w.body)
+	return nil
+}
+
+func (w *ImagesWidget) SetSelectedImage(image string) error {
+
+	for i, line := range strings.Split(w.body, "\n") {
+		if line == image {
+			y := i + 1
+			w.v.SetCursor(0, y)
+			w.v.SetHighlight(y, true)
+			break
+		}
+	}
 	return nil
 }
 
@@ -153,5 +170,5 @@ func (w *ImagesWidget) SelectedImage() string {
 // RefreshView implements Widget
 func (w *ImagesWidget) RefreshView() {
 	w.v.Clear()
-	fmt.Fprintf(w.v, w.body)
+	_, _ = fmt.Fprintf(w.v, w.body)
 }

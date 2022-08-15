@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"context"
 	"fmt"
+	"sync"
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/docker"
@@ -10,10 +12,12 @@ import (
 )
 
 type Controller struct {
+	sync.Mutex
 	cui           *gocui.Gui
 	dockerClient  *docker.DockerClient
 	views         map[string]widgets.Widget
 	selectedImage string
+	activeCancel  context.CancelFunc
 }
 
 func New() (*Controller, error) {
@@ -38,6 +42,8 @@ func (g *Controller) CreateWidgets() error {
 	g.views["images"] = widgets.NewImagesWidget("images", g)
 	g.views["results"] = widgets.NewInfoWidget("results", g)
 	g.views["menu"] = widgets.NewMenuWidget("menu", 0, maxY-3, maxX-1, maxY-1, g)
+	g.views["status"] = widgets.NewStatusWidget("status", g)
+	g.views["host"] = widgets.NewHostWidget("host", g)
 
 	g.SetManager()
 	g.EnableMouse()
@@ -103,44 +109,100 @@ func (g *Controller) DisableMouse() {
 	g.cui.Mouse = false
 }
 
+func (g *Controller) CancelCurrentScan(_ *gocui.Gui, _ *gocui.View) error {
+	g.Lock()
+	defer g.Unlock()
+	if g.activeCancel != nil {
+		g.UpdateStatus("Current scan cancelled.")
+		g.activeCancel()
+		g.activeCancel = nil
+	}
+	return nil
+}
+
 func (g *Controller) SetSelectedImage(selected string) {
 	g.selectedImage = selected
 }
 
-func (g *Controller) ScanImage(imageName string) {
+func (g *Controller) ScanImage(ctx context.Context, imageName string) {
+	g.cleanupResults()
 
+	var cancellable context.Context
+	g.Lock()
+	defer g.Unlock()
+	cancellable, g.activeCancel = context.WithCancel(ctx)
 	go func() {
-		report, err := g.dockerClient.ScanImage(imageName)
+		report, err := g.dockerClient.ScanImage(cancellable, imageName, g)
 		if err != nil {
-			return //TODO: Need to do something here
+			return // TODO: Need to do something here
 		}
 		g.cui.Update(func(gocui *gocui.Gui) error {
-			return g.renderResultsReport(imageName, *report)
+			return g.renderResultsReport(imageName, report)
 		})
 	}()
 
 }
 
+func (g *Controller) ScanAllImages(ctx context.Context) {
+	g.cleanupResults()
+
+	var cancellable context.Context
+	g.Lock()
+	defer g.Unlock()
+	cancellable, g.activeCancel = context.WithCancel(ctx)
+	go func() {
+		reports, err := g.dockerClient.ScanAllImages(cancellable, g)
+		if err != nil {
+			return // TODO: Need to do something here
+		}
+		if err := g.renderResultsReportSummary(reports); err != nil {
+			g.UpdateStatus(err.Error())
+		}
+		g.UpdateStatus("All images scanned.")
+	}()
+
+}
+
 func flowLayout(g *gocui.Gui) error {
-	views := g.Views()
+
+	imagesWidth := 0
+	viewNames := []string{"images", "host", "results", "menu", "status"}
 	maxX, maxY := g.Size()
 	x := 0
-	for _, v := range views {
+	for _, viewName := range viewNames {
+		v, err := g.View(viewName)
 		w, _ := v.Size()
+		h := 1
 		nextW := w
+		nextH := maxY - 3
+		nextX := x
 
 		switch v.Name() {
-		case "scanning", "menu", "remote":
-			continue
+		case "host":
+			nextW = imagesWidth
+			nextX = 0
+			nextH = 3
+		case "images":
+			imagesWidth = w
+			h = 4
+		case "status":
+			nextW = maxX - 1
+			h = maxY - 5
 		case "results":
 			nextW = maxX - 1
+			nextH = maxY - 6
+		case "menu", "remote", "critical":
+			continue
 		}
 
-		_, err := g.SetView(v.Name(), x, 1, nextW, maxY-3, 0)
+		_, err = g.SetView(v.Name(), nextX, h, nextW, nextH, 0)
 		if err != nil && err != gocui.ErrUnknownView {
 			return err
 		}
-		x += nextW + 2
+		if v.Name() == "images" {
+			x += nextW + 1
+		}
+		h = 1
 	}
 	return nil
 }
@@ -171,25 +233,47 @@ func (g *Controller) scanRemote(gui *gocui.Gui, _ *gocui.View) error {
 		_, err := gui.SetCurrentView("remote")
 		return err
 	})
-
 	return nil
 }
 
-func (g *Controller) renderResultsReport(imageName string, report output.Report) error {
+func (g *Controller) renderResultsReport(imageName string, report *output.Report) error {
 	if v, ok := g.views["results"]; ok {
-		v.(*widgets.InfoWidget).RenderReport(report, fmt.Sprintf(" %s ", imageName))
+		infoWidget := v.(*widgets.InfoWidget)
+		infoWidget.RenderReport(report, fmt.Sprintf(" %s ", imageName), "ALL")
 		_, err := g.cui.SetCurrentView("results")
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
-func (g *Controller) RefreshImages() error {
-	images := g.dockerClient.ListImages()
+func (g *Controller) renderResultsReportSummary(reports []*output.Report) error {
+	if v, ok := g.views["results"]; ok {
+		v.(*widgets.InfoWidget).UpdateResultsTable(reports)
+		_, err := g.cui.SetCurrentView("results")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
+func (g *Controller) UpdateStatus(status string) {
+	if v, ok := g.views["status"]; ok {
+		v.(*widgets.StatusWidget).UpdateStatus(status)
+		v.RefreshView()
+	}
+}
+
+func (g *Controller) ClearStatus() {
+	g.UpdateStatus("")
+}
+
+func (g *Controller) RefreshImages() error {
+	g.UpdateStatus("Refreshing images")
+	images := g.dockerClient.ListImages()
+	g.ClearStatus()
 	return g.views["images"].(*widgets.ImagesWidget).RefreshImages(images)
 }
 
@@ -200,4 +284,12 @@ func (g *Controller) RefreshView(viewName string) {
 		}
 		return nil
 	})
+}
+
+func (g *Controller) cleanupResults() {
+	if v, err := g.cui.View("results"); err == nil {
+		v.Clear()
+		v.Subtitle = ""
+	}
+	g.cui.DeleteView("filter")
 }

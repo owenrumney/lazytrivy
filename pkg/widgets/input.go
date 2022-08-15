@@ -1,6 +1,10 @@
 package widgets
 
-import "github.com/awesome-gocui/gocui"
+import (
+	"context"
+
+	"github.com/awesome-gocui/gocui"
+)
 
 type Input struct {
 	name      string
@@ -17,7 +21,7 @@ func NewInput(name string, maxX, maxY, maxLength int, ctx ctx) (*Input, error) {
 	if err := ctx.SetKeyBinding("remote", gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if len(view.BufferLines()) > 0 {
 			if image, _ := view.Line(0); image != "" {
-				ctx.ScanImage(image)
+				ctx.ScanImage(context.Background(), image)
 			}
 		}
 		gui.Mouse = true

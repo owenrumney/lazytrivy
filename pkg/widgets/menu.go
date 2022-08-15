@@ -1,10 +1,10 @@
 package widgets
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/liamg/tml"
 )
 
 type MenuWidget struct {
@@ -24,7 +24,8 @@ func (w *MenuWidget) RefreshView() {
 func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
 
 	menuItems := []string{
-		"[s]scan", "[r]emote", "[i]mage refresh", "[q]uit",
+		"<blue>[s]</blue>can", "scan <blue>[a]</blue>ll", "<blue>[r]</blue>emote", "<blue>[f]</blue>ilter results",
+		"<green>[i]</green>mage refresh", "<red>[c]</red>ancel scan", "<red>[q]</red>uit",
 	}
 
 	return &MenuWidget{name: name, x: x, y: y, w: w, h: h, body: menuItems, ctx: ctx}
@@ -42,7 +43,7 @@ func (w *MenuWidget) Layout(g *gocui.Gui) error {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
-		_, _ = fmt.Fprintf(v, "Help: %s", strings.Join(w.body, " | "))
+		_ = tml.Fprintf(v, strings.Join(w.body, " | "))
 	}
 	v.Frame = false
 	w.v = v
