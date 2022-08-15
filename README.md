@@ -2,6 +2,8 @@
 
 Lazytrivy is a wrapper for [Trivy](https://github.com/aquasecurity/trivy) that allows you to run Trivy without remembering the command arguments.
 
+The idea was very heavily inspired by the superb tools from [Jesse Duffield](https://github.com/jesseduffield) (lazydocker, lazynpm, lazygit)
+
 ![Scan All Images](./.github/images/scan_all.png)
 
 ## Installation
