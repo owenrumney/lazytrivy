@@ -27,5 +27,5 @@ jobs:
           version: latest
           args: release --rm-dist
         env:
-          GITHUB_TOKEN: ${{ git.token }}
+          GITHUB_TOKEN: ${{ github.token }}
 
