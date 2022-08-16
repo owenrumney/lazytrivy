@@ -87,7 +87,9 @@ func (w *InfoWidget) ScrollDown(_ *gocui.Gui, view *gocui.View) error {
 		_, h := view.Size()
 		ox, oy := view.Origin()
 		newPos := oy + 3
-		if w.v.Lines
+		if newPos > w.v.LinesHeight()-(h-200) {
+			return nil
+		}
 		_ = view.SetOrigin(ox, newPos)
 	}
 	return nil
@@ -258,7 +260,6 @@ func (w *InfoWidget) CreateFilterView(gui *gocui.Gui, view *gocui.View) error {
 		}
 		if selectedSeverity != "" && selectedSeverity != "Click severity to apply filter:" {
 			w.GenerateFilteredReport(w.currentReport.ImageName, selectedSeverity)
-
 		}
 		_ = gui.DeleteView(Filter)
 		return nil
