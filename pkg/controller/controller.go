@@ -63,13 +63,15 @@ func (g *Controller) SetManager() {
 }
 
 func (g *Controller) Run() error {
-	if err := g.cui.MainLoop(); err != nil && errors.Is(err, gocui.ErrQuit) {
+	if err := g.cui.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		return fmt.Errorf("error occurred during the run main loop: %w", err)
 	}
 	return nil
 }
 
-func (g *Controller) Initialise() {
+func (g *Controller) Initialise() error {
+	var outerErr error
+
 	g.cui.Update(func(gui *gocui.Gui) error {
 		if err := g.configureGlobalKeys(); err != nil {
 			return fmt.Errorf("failed to configure global keys: %w", err)
@@ -82,9 +84,12 @@ func (g *Controller) Initialise() {
 		}
 
 		_, err := gui.SetCurrentView(widgets.Images)
-
+		if err != nil {
+			outerErr = fmt.Errorf("failed to set current view: %w", err)
+		}
 		return err
 	})
+	return outerErr
 }
 
 func (g *Controller) SetKeyBinding(viewName string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) error {
@@ -234,7 +239,10 @@ func (g *Controller) scanRemote(gui *gocui.Gui, _ *gocui.View) error {
 			return fmt.Errorf("failed to layout remote input: %w", err)
 		}
 		_, err := gui.SetCurrentView(widgets.Remote)
-		return fmt.Errorf("failed to set current view: %w", err)
+		if err != nil {
+			return fmt.Errorf("failed to set current view: %w", err)
+		}
+		return nil
 	})
 	return nil
 }
@@ -296,5 +304,5 @@ func (g *Controller) cleanupResults() {
 		v.Clear()
 		v.Subtitle = ""
 	}
-	_ = g.cui.DeleteView("filter")
+	_ = g.cui.DeleteView(widgets.Filter)
 }

@@ -3,6 +3,7 @@ package widgets
 import "github.com/awesome-gocui/gocui"
 
 const (
+	Filter  = "filter"
 	Host    = "host"
 	Images  = "images"
 	Menu    = "menu"

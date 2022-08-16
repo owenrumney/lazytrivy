@@ -52,7 +52,7 @@ func NewInput(name string, maxX, maxY, maxLength int, ctx ctx) (*Input, error) {
 func (i *Input) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(i.name, i.x, i.y, i.w, i.y+2, 0)
 	if err != nil {
-		if errors.Is(err, gocui.ErrUnknownView) {
+		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("failed to create view: %w", err)
 		}
 		v.Title = " Enter remote image name "

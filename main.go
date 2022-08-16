@@ -21,7 +21,9 @@ func main() {
 	}
 
 	// set up the initial view to be the images widget
-	control.Initialise()
+	if err := control.Initialise(); err != nil {
+		fail(err)
+	}
 
 	// Enter the run loop - its all in the gui from this point on
 	if err := control.Run(); err != nil {

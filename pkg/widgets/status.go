@@ -37,7 +37,7 @@ func (w *StatusWidget) ConfigureKeys() error {
 func (w *StatusWidget) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
-		if errors.Is(err, gocui.ErrUnknownView) {
+		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
 		_, _ = fmt.Fprintf(v, w.body)

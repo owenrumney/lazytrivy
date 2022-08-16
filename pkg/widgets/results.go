@@ -55,7 +55,7 @@ func (w *InfoWidget) ConfigureKeys() error {
 func (w *InfoWidget) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
-		if errors.Is(err, gocui.ErrUnknownView) {
+		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
 		_ = tml.Fprintf(v, w.body)
@@ -87,9 +87,7 @@ func (w *InfoWidget) ScrollDown(_ *gocui.Gui, view *gocui.View) error {
 		_, h := view.Size()
 		ox, oy := view.Origin()
 		newPos := oy + 3
-		if newPos > w.v.LinesHeight()-(h+100) {
-			return nil
-		}
+		if w.v.Lines
 		_ = view.SetOrigin(ox, newPos)
 	}
 	return nil
@@ -222,17 +220,28 @@ func (w *InfoWidget) CreateFilterView(gui *gocui.Gui, view *gocui.View) error {
 			sevs = append(sevs, sev)
 		}
 	}
+
+	colourSevs = append(colourSevs, "[EXIT]")
 	x, _, width, h := view.Dimensions()
 
-	v, err := gui.SetView("filter", x+1, h-3, width-1, h-1, 0)
+	v, err := gui.SetView(Filter, x+1, h-3, width-1, h-1, 0)
 	if err != nil {
-		if errors.Is(err, gocui.ErrUnknownView) {
+		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
 		_ = tml.Fprintf(v, strings.Join(colourSevs, " | "))
 	}
 
-	if err := gui.SetKeybinding("filter", gocui.MouseLeft, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := gui.SetKeybinding(Filter, 'x', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if err := gui.DeleteView(Filter); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if err := gui.SetKeybinding(Filter, gocui.MouseLeft, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		x, _ := view.Cursor()
 		pos := 0
 		start := 0
@@ -249,9 +258,9 @@ func (w *InfoWidget) CreateFilterView(gui *gocui.Gui, view *gocui.View) error {
 		}
 		if selectedSeverity != "" && selectedSeverity != "Click severity to apply filter:" {
 			w.GenerateFilteredReport(w.currentReport.ImageName, selectedSeverity)
-			_ = gui.DeleteView("filter")
-		}
 
+		}
+		_ = gui.DeleteView(Filter)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
