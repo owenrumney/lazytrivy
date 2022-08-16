@@ -1,6 +1,6 @@
-# Lazytrivy
+# lazytrivy
 
-Lazytrivy is a wrapper for [Trivy](https://github.com/aquasecurity/trivy) that allows you to run Trivy without remembering the command arguments.
+lazytrivy is a wrapper for [Trivy](https://github.com/aquasecurity/trivy) that allows you to run Trivy without remembering the command arguments.
 
 The idea was very heavily inspired by the superb tools from [Jesse Duffield](https://github.com/jesseduffield) (lazydocker, lazynpm, lazygit)
 
@@ -14,7 +14,7 @@ The quickest way to install if you have `Go` installed is to get the latest with
 go install github.com/owenrumney/lazytrivy@latest
 ```
 
-Alternatively, you can get the latest releases from [Github](https://github.com/owenrumney/lazytrivy) 
+Alternatively, you can get the latest releases from [GitHub](https://github.com/owenrumney/lazytrivy) 
 
 ## Usage
 

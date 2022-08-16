@@ -1,0 +1,28 @@
+
+linters:
+  enable-all: true
+  disable:
+    - exhaustruct
+    - exhaustivestruct
+    - funlen
+    - gofumpt
+    - gomnd
+    - lll
+    - nlreturn
+    - nolintlint
+    - varnamelen
+    - wrapcheck
+    - wsl
+
+linters-settings:
+  cyclop:
+    max-complexity: 15
+  gocritic:
+    disabled-checks:
+      - singleCaseSwitch
+
+issues:
+  exclude-rules:
+    - path: "."
+      linters:
+        - typecheck

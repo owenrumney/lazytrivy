@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/awesome-gocui/gocui"
@@ -16,7 +17,6 @@ type StatusWidget struct {
 }
 
 func NewStatusWidget(name string, ctx ctx) *StatusWidget {
-
 	return &StatusWidget{
 		name: name,
 		x:    0,
@@ -24,6 +24,7 @@ func NewStatusWidget(name string, ctx ctx) *StatusWidget {
 		w:    5,
 		h:    1,
 		body: "",
+		v:    nil,
 		ctx:  ctx,
 	}
 }
@@ -34,11 +35,10 @@ func (w *StatusWidget) ConfigureKeys() error {
 }
 
 func (w *StatusWidget) Layout(g *gocui.Gui) error {
-
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+		if errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("%w", err)
 		}
 		_, _ = fmt.Fprintf(v, w.body)
 	}

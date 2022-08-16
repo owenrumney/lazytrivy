@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -17,7 +18,6 @@ type HostWidget struct {
 }
 
 func NewHostWidget(name string, ctx ctx) *HostWidget {
-
 	hostName, err := os.Hostname()
 	if err != nil {
 		hostName = "unknown"
@@ -39,11 +39,10 @@ func (w *HostWidget) ConfigureKeys() error {
 }
 
 func (w *HostWidget) Layout(g *gocui.Gui) error {
-
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+		if errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("%w", err)
 		}
 		_, _ = fmt.Fprintf(v, w.body)
 	}

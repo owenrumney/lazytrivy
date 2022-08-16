@@ -2,6 +2,8 @@ package widgets
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/awesome-gocui/gocui"
 )
@@ -18,7 +20,7 @@ func NewInput(name string, maxX, maxY, maxLength int, ctx ctx) (*Input, error) {
 	x2 := maxX/2 + 50
 	y1 := maxY/2 - 1
 
-	if err := ctx.SetKeyBinding("remote", gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if len(view.BufferLines()) > 0 {
 			if image, _ := view.Line(0); image != "" {
 				ctx.ScanImage(context.Background(), image)
@@ -26,17 +28,22 @@ func NewInput(name string, maxX, maxY, maxLength int, ctx ctx) (*Input, error) {
 		}
 		gui.Mouse = true
 		gui.Cursor = false
-		return gui.DeleteView("remote")
+
+		if err := gui.DeleteView(Remote); err != nil {
+			return fmt.Errorf("failed to delete view 'remote': %w", err)
+		}
+
+		return nil
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("remote", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := ctx.SetKeyBinding(Remote, gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		gui.Mouse = true
 		gui.Cursor = false
-		return gui.DeleteView("remote")
+		return gui.DeleteView(Remote)
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	return &Input{name: name, x: x1, y: y1, w: x2, maxLength: maxLength}, nil
@@ -45,8 +52,8 @@ func NewInput(name string, maxX, maxY, maxLength int, ctx ctx) (*Input, error) {
 func (i *Input) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(i.name, i.x, i.y, i.w, i.y+2, 0)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+		if errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("failed to create view: %w", err)
 		}
 		v.Title = " Enter remote image name "
 		v.Editor = i

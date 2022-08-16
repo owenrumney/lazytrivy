@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -24,28 +23,25 @@ type Progress interface {
 	ClearStatus()
 }
 
-type DockerClient struct {
+type Client struct {
 	client            *client.Client
-	ctx               context.Context
 	imageNames        []string
 	trivyImagePresent bool
 }
 
-func NewDockerClient() *DockerClient {
+func NewClient() *Client {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
 
-	return &DockerClient{
-		ctx:    context.Background(),
+	return &Client{
 		client: cli,
 	}
 }
 
-func (c *DockerClient) ListImages() []string {
-
-	images, err := c.client.ImageList(c.ctx, types.ImageListOptions{
+func (c *Client) ListImages() []string {
+	images, err := c.client.ImageList(context.Background(), types.ImageListOptions{
 		All:     false,
 		Filters: filters.Args{},
 	})
@@ -60,6 +56,7 @@ func (c *DockerClient) ListImages() []string {
 			imageName := image.RepoTags[0]
 			if strings.HasPrefix(imageName, "aquasec/trivy:") {
 				c.trivyImagePresent = true
+
 				continue
 			}
 			imageNames = append(imageNames, imageName)
@@ -68,11 +65,11 @@ func (c *DockerClient) ListImages() []string {
 
 	sort.Strings(imageNames)
 	c.imageNames = imageNames
+
 	return c.imageNames
 }
 
-func (c *DockerClient) ScanImage(ctx context.Context, imageName string, progress Progress) (*output.Report, error) {
-
+func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progress) (*output.Report, error) {
 	if !c.trivyImagePresent {
 		progress.UpdateStatus("Pulling latest Trivy image...")
 
@@ -80,12 +77,9 @@ func (c *DockerClient) ScanImage(ctx context.Context, imageName string, progress
 			All: false,
 		})
 		defer func() { _ = resp.Close() }()
-		_, _ = io.Copy(ioutil.Discard, resp)
-
+		_, _ = io.Copy(io.Discard, resp)
 	}
-
 	cachePath := filepath.Join(os.TempDir(), "trivycache")
-
 	progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
 	cont, err := c.client.ContainerCreate(ctx, &container.Config{
 		Image:        "aquasec/trivy",
@@ -129,37 +123,39 @@ func (c *DockerClient) ScanImage(ctx context.Context, imageName string, progress
 	buffer := bytes.NewBufferString(content)
 	_, _ = stdcopy.StdCopy(buffer, buffer, out)
 
-	rep, err := output.FromJson(imageName, buffer.String())
+	rep, err := output.FromJSON(imageName, buffer.String())
 	if err != nil {
 		return nil, err
 	}
 
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return nil, ctx.Err() // nolint
 	default:
 		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...done", imageName))
+
 		return rep, nil
 	}
 }
 
-func (c *DockerClient) ScanAllImages(ctx context.Context, progress Progress) ([]*output.Report, error) {
-	var reports []*output.Report
+func (c *Client) ScanAllImages(ctx context.Context, progress Progress) ([]*output.Report, error) {
+	var reports []*output.Report // nolint
 
 	for _, imageName := range c.imageNames {
 		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
 
-		if report, err := c.ScanImage(ctx, imageName, progress); err != nil {
+		report, err := c.ScanImage(ctx, imageName, progress)
+		if err != nil {
 			return nil, err
-		} else {
-			progress.UpdateStatus(fmt.Sprintf("Scanning image %s...done", imageName))
-			reports = append(reports, report)
 		}
+		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...done", imageName))
+		reports = append(reports, report)
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, ctx.Err() // nolint
 		default:
 		}
 	}
+
 	return reports, nil
 }

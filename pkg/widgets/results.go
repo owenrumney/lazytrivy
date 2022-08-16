@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -28,6 +29,7 @@ func NewInfoWidget(name string, g ctx) *InfoWidget {
 		y:    0,
 		w:    10,
 		h:    10,
+		v:    nil,
 		ctx:  g,
 	}
 
@@ -36,15 +38,15 @@ func NewInfoWidget(name string, g ctx) *InfoWidget {
 
 func (w *InfoWidget) ConfigureKeys() error {
 	if err := w.ctx.SetKeyBinding(w.name, gocui.MouseWheelDown, gocui.ModNone, w.ScrollDown); err != nil {
-		return err
+		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.MouseWheelUp, gocui.ModNone, w.ScrollUp); err != nil {
-		return err
+		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, 'f', gocui.ModNone, w.CreateFilterView); err != nil {
-		return err
+		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
 	return nil
@@ -53,8 +55,8 @@ func (w *InfoWidget) ConfigureKeys() error {
 func (w *InfoWidget) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+		if errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("%w", err)
 		}
 		_ = tml.Fprintf(v, w.body)
 	}
@@ -88,9 +90,7 @@ func (w *InfoWidget) ScrollDown(_ *gocui.Gui, view *gocui.View) error {
 		if newPos > w.v.LinesHeight()-(h+100) {
 			return nil
 		}
-		if err := view.SetOrigin(ox, newPos); err != nil {
-			return nil
-		}
+		_ = view.SetOrigin(ox, newPos)
 	}
 	return nil
 }
@@ -103,15 +103,12 @@ func (w *InfoWidget) ScrollUp(_ *gocui.Gui, view *gocui.View) error {
 		if newPos < 0 {
 			return nil
 		}
-		if err := view.SetOrigin(ox, newPos); err != nil {
-			return nil
-		}
+		_ = view.SetOrigin(ox, newPos)
 	}
 	return nil
 }
 
 func (w *InfoWidget) UpdateResultsTable(reports []*output.Report) {
-
 	w.v.Clear()
 
 	t := table.New(w.v)
@@ -120,14 +117,12 @@ func (w *InfoWidget) UpdateResultsTable(reports []*output.Report) {
 	t.SetAlignment(table.AlignLeft, table.AlignCenter, table.AlignCenter, table.AlignCenter, table.AlignCenter, table.AlignCenter, table.AlignCenter)
 
 	for _, report := range reports {
-
 		t.AddRow(report.ImageName,
 			tml.Sprintf("<bold><red>%d</red></bold>", (report.SeverityCount["CRITICAL"])),
 			tml.Sprintf("<red>%d</red>", (report.SeverityCount["HIGH"])),
 			tml.Sprintf("<yellow>%d</yellow>", (report.SeverityCount["MEDIUM"])),
 			tml.Sprintf("%d", (report.SeverityCount["LOW"])),
 			tml.Sprintf("%d", (report.SeverityCount["UNKNOWN"])))
-
 	}
 
 	_ = tml.Fprintf(w.v, `
@@ -153,10 +148,9 @@ func (w *InfoWidget) RenderReport(report *output.Report, imageName string, sever
 }
 
 func (w *InfoWidget) GenerateFilteredReport(imageName string, severity string) {
-
 	w.Reset()
 
-	var blocks []string
+	var blocks []string // nolint:prealloc
 
 	var results []output.Result
 	if severity != "ALL" {
@@ -173,7 +167,7 @@ func (w *InfoWidget) GenerateFilteredReport(imageName string, severity string) {
 		var vulnerabilities []string
 
 		sort.Slice(result.Vulnerabilities, func(i, j int) bool {
-			return result.Vulnerabilities[i].Severity < result.Vulnerabilities[j].Severity
+			return result.Vulnerabilities[i].Severity < result.Vulnerabilities[j].Severity //nolint:scopelint
 		})
 
 		for _, v := range result.Vulnerabilities {
@@ -232,8 +226,8 @@ func (w *InfoWidget) CreateFilterView(gui *gocui.Gui, view *gocui.View) error {
 
 	v, err := gui.SetView("filter", x+1, h-3, width-1, h-1, 0)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+		if errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("%w", err)
 		}
 		_ = tml.Fprintf(v, strings.Join(colourSevs, " | "))
 	}
@@ -244,9 +238,10 @@ func (w *InfoWidget) CreateFilterView(gui *gocui.Gui, view *gocui.View) error {
 		start := 0
 		selectedSeverity := ""
 		for _, s := range sevs {
-			pos = pos + len(s)
+			pos += len(s)
 			if start < x && x <= pos {
 				selectedSeverity = s
+
 				break
 			}
 			start = pos + 3
@@ -259,7 +254,7 @@ func (w *InfoWidget) CreateFilterView(gui *gocui.Gui, view *gocui.View) error {
 
 		return nil
 	}); err != nil {
-		return err
+		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
 	v.Frame = true

@@ -25,18 +25,18 @@ type Vulnerability struct {
 	FixedVersion     string
 }
 
-func FromJson(imageName string, content string) (*Report, error) {
+func FromJSON(imageName string, content string) (*Report, error) {
 	var report Report
-	err := json.Unmarshal([]byte(content), &report)
-	if err := report.processReport(); err != nil {
+	if err := json.Unmarshal([]byte(content), &report); err != nil {
 		return nil, err
 	}
+	report.processReport()
 	report.ImageName = imageName
-	return &report, err
+
+	return &report, nil
 }
 
-func (r *Report) processReport() error {
-
+func (r *Report) processReport() {
 	r.SeverityMap = make(map[string][]Result)
 	r.SeverityCount = make(map[string]int)
 
@@ -53,6 +53,7 @@ func (r *Report) processReport() error {
 				if result.Target == t.Target {
 					foundResult = t
 					found = true
+
 					break
 				}
 			}
@@ -67,5 +68,4 @@ func (r *Report) processReport() error {
 			r.SeverityCount[v.Severity]++
 		}
 	}
-	return nil
 }
