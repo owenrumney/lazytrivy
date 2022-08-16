@@ -11,7 +11,7 @@ The idea was very heavily inspired by the superb tools from [Jesse Duffield](htt
 The quickest way to install if you have `Go` installed is to get the latest with `go install`
 
 ```bash
-go install github.com/aquasecurity/lazytrivy
+go install github.com/owenrumney/lazytrivy
 ```
 
 Alternatively, you can get the latest releases from [Github](https://github.com/owenrumney/lazytrivy) 
