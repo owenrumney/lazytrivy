@@ -2,6 +2,7 @@ package widgets
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -21,7 +22,6 @@ type ImagesWidget struct {
 }
 
 func NewImagesWidget(name string, g ctx) *ImagesWidget {
-
 	images := g.DockerClient().ListImages()
 	w := 5
 
@@ -50,22 +50,22 @@ func NewImagesWidget(name string, g ctx) *ImagesWidget {
 }
 
 func (w *ImagesWidget) ConfigureKeys() error {
-
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.PreviousImage); err != nil {
-		return err
+		return fmt.Errorf("failed to set the previous image %w", err)
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.NextImage); err != nil {
-		return err
+		return fmt.Errorf("failed to set the next image %w", err)
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if image := w.SelectedImage(); image != "" {
 			w.ctx.ScanImage(context.Background(), image)
 		}
+
 		return nil
 	}); err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
 
 	return nil
@@ -74,8 +74,8 @@ func (w *ImagesWidget) ConfigureKeys() error {
 func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("%w", err)
 		}
 		_, _ = fmt.Fprint(v, w.body)
 	}
@@ -91,8 +91,12 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 	}
 
 	if !w.changed {
-		v.SetCursor(0, 0)
-		v.SetHighlight(0, true)
+		if err := v.SetCursor(0, 0); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+		if err := v.SetHighlight(0, true); err != nil {
+			return fmt.Errorf("%w", err)
+		}
 	}
 
 	w.v = v
@@ -103,9 +107,15 @@ func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, view *gocui.View) error {
 	_, y := view.Cursor()
 
 	if y > 0 {
-		view.SetHighlight(y, false)
-		view.SetHighlight(y-1, true)
-		_ = view.SetCursor(0, y-1)
+		if err := view.SetHighlight(y, false); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+		if err := view.SetHighlight(y-1, true); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+		if err := view.SetCursor(0, y-1); err != nil {
+			return fmt.Errorf("%w", err)
+		}
 	}
 
 	if image, err := w.v.Line(y); err == nil {
@@ -120,8 +130,12 @@ func (w *ImagesWidget) NextImage(_ *gocui.Gui, view *gocui.View) error {
 	_, y := view.Cursor()
 
 	if y < w.imageCount-1 {
-		view.SetHighlight(y, false)
-		view.SetHighlight(y+1, true)
+		if err := view.SetHighlight(y, false); err != nil {
+			return fmt.Errorf("%w", err)
+		}
+		if err := view.SetHighlight(y+1, true); err != nil {
+			return fmt.Errorf("%w", err)
+		}
 		_ = view.SetCursor(0, y+1)
 	}
 	if image, err := w.v.Line(y); err == nil {
@@ -147,12 +161,16 @@ func (w *ImagesWidget) RefreshImages(images []string) error {
 }
 
 func (w *ImagesWidget) SetSelectedImage(image string) error {
-
 	for i, line := range strings.Split(w.body, "\n") {
 		if line == image {
 			y := i + 1
-			w.v.SetCursor(0, y)
-			w.v.SetHighlight(y, true)
+			if err := w.v.SetCursor(0, y); err != nil {
+				return fmt.Errorf("%w", err)
+			}
+			if err := w.v.SetHighlight(y, true); err != nil {
+				return fmt.Errorf("%w", err)
+			}
+
 			break
 		}
 	}
@@ -167,7 +185,6 @@ func (w *ImagesWidget) SelectedImage() string {
 	return ""
 }
 
-// RefreshView implements Widget
 func (w *ImagesWidget) RefreshView() {
 	w.v.Clear()
 	_, _ = fmt.Fprintf(w.v, w.body)

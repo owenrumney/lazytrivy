@@ -1,6 +1,8 @@
 package widgets
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/awesome-gocui/gocui"
@@ -16,19 +18,26 @@ type MenuWidget struct {
 	ctx  ctx
 }
 
-// RefreshView implements Widget
 func (w *MenuWidget) RefreshView() {
 	panic("unimplemented")
 }
 
 func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
-
 	menuItems := []string{
 		"<blue>[s]</blue>can", "scan <blue>[a]</blue>ll", "<blue>[r]</blue>emote", "<blue>[f]</blue>ilter results",
 		"<green>[i]</green>mage refresh", "<red>[c]</red>ancel scan", "<red>[q]</red>uit",
 	}
 
-	return &MenuWidget{name: name, x: x, y: y, w: w, h: h, body: menuItems, ctx: ctx}
+	return &MenuWidget{
+		name: name,
+		x:    x,
+		y:    y,
+		w:    w,
+		h:    h,
+		body: menuItems,
+		v:    nil,
+		ctx:  ctx,
+	}
 }
 
 func (w *MenuWidget) ConfigureKeys() error {
@@ -37,11 +46,10 @@ func (w *MenuWidget) ConfigureKeys() error {
 }
 
 func (w *MenuWidget) Layout(g *gocui.Gui) error {
-
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("%w", err)
 		}
 		_ = tml.Fprintf(v, strings.Join(w.body, " | "))
 	}

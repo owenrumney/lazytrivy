@@ -9,7 +9,7 @@ import (
 
 type ctx interface {
 	ScanImage(ctx context.Context, imageName string)
-	DockerClient() *docker.DockerClient
+	DockerClient() *docker.Client
 	SetKeyBinding(viewName string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) error
 	SetSelectedImage(imageName string)
 	RefreshView(viewName string)
