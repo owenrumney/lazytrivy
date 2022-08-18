@@ -26,6 +26,7 @@ func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
 	menuItems := []string{
 		"<blue>[enter] or [s]</blue>can", "scan <blue>[a]</blue>ll", "<blue>[r]</blue>emote",
 		"<green>[i]</green>mage refresh", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
+		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
 	}
 
 	return &MenuWidget{
@@ -51,8 +52,9 @@ func (w *MenuWidget) Layout(g *gocui.Gui) error {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
-		_ = tml.Fprintf(v, strings.Join(w.body, " | "))
 	}
+	v.Clear()
+	_ = tml.Fprintf(v, strings.Join(w.body, " | "))
 	v.Frame = false
 	w.v = v
 	return nil

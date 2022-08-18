@@ -40,6 +40,26 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output
 		return nil, fmt.Errorf("%w", err)
 	}
 
+	if err := ctx.SetKeyBinding("summary", gocui.KeyArrowDown, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		_, oy := view.Origin()
+		_ = view.SetOrigin(0, oy+1)
+
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	if err := ctx.SetKeyBinding("summary", gocui.KeyArrowUp, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		_, oy := view.Origin()
+		if oy > 0 {
+			_ = view.SetOrigin(0, oy-1)
+		}
+
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
 	if err := ctx.SetKeyBinding("summary", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		gui.Mouse = true
 		gui.Cursor = false
@@ -69,42 +89,40 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 	vulnerability := i.vuln
 	var lines []string
 
-	if vulnerability.Title != "" {
-		titleLines := i.prettyLines(vulnerability.Title, i.w-i.x-20)
-		first := true
-		for _, line := range titleLines {
-			if first {
-				lines = append(lines, tml.Sprintf("\n<bold>Title:</bold>              %s", line))
-				first = false
-			} else {
-				lines = append(lines, tml.Sprintf("                     %s", line))
-			}
-		}
+	lines = printMultiline(vulnerability.Title, "Title", lines, i.w-i.x-20)
+	lines = printMultiline(vulnerability.Title, "Description", lines, i.w-i.x-20)
+	lines = printSingleLine(vulnerability.VulnerabilityID, "Vulnerability ID", lines)
 
-		lines = append(lines, "\n")
+	if vulnerability.DataSource != nil && vulnerability.DataSource.Name != "" {
+		lines = append(lines, tml.Sprintf("<green>DataSource:</green>\n  %s\n", vulnerability.DataSource.Name))
+	}
+	lines = printSingleLine(vulnerability.Severity, "Severity", lines)
+	lines = printSingleLine(vulnerability.SeveritySource, "Severity Source", lines)
+	lines = printSingleLine(vulnerability.PkgName, "Package Name", lines)
+	lines = printSingleLine(vulnerability.PkgPath, "Package Path", lines)
+	lines = printSingleLine(vulnerability.InstalledVersion, "Installed Version", lines)
+	lines = printSingleLine(vulnerability.FixedVersion, "Fixed Version", lines)
+	if vulnerability.CVSS != nil {
+		for cvss, vals := range vulnerability.CVSS {
+			lines = append(lines, tml.Sprintf("<green>%s:</green>", cvss))
+			if valsMap, ok := vals.(map[string]interface{}); ok {
+				for k, v := range valsMap {
+					lines = append(lines, tml.Sprintf("  %s: %v", k, v))
+				}
+			}
+			lines = append(lines, "")
+		}
 	}
 
-	if vulnerability.Description != "" {
-		descriptionLines := i.prettyLines(vulnerability.Description, i.w-i.x-20)
-		first := true
-		for _, line := range descriptionLines {
-			if first {
-				lines = append(lines, tml.Sprintf("<bold>Description:</bold>        %s", line))
-				first = false
-			} else {
-				lines = append(lines, tml.Sprintf("                    %s", line))
-			}
+	if vulnerability.PrimaryURL != "" {
+		lines = append(lines, tml.Sprintf("<green>More Info:</green>\n  <blue>%s</blue>\n", vulnerability.PrimaryURL))
+	}
+	if len(vulnerability.References) > 0 {
+		lines = append(lines, tml.Sprintf("<green>References:</green>"))
+		for _, reference := range vulnerability.References {
+			lines = append(lines, tml.Sprintf("  <blue>%s</blue>", reference))
 		}
-		lines = append(lines, "\n")
 	}
-	lines = append(lines, tml.Sprintf("<bold>Vulnerability ID:</bold>   %s\n", vulnerability.VulnerabilityID))
-	lines = append(lines, tml.Sprintf("<bold>Severity:</bold>           %s\n", vulnerability.Severity))
-	lines = append(lines, tml.Sprintf("<bold>Package Name:</bold>       %s\n", vulnerability.PkgName))
-	lines = append(lines, tml.Sprintf("<bold>Installed Version:</bold>  %s\n", vulnerability.InstalledVersion))
-	if vulnerability.FixedVersion != "" {
-		lines = append(lines, tml.Sprintf("<bold>Fixed Version:</bold>      %s\n", vulnerability.FixedVersion))
-	}
-	lines = append(lines, tml.Sprintf("<bold>More Info:</bold>          <blue>%s</blue>\n", vulnerability.PrimaryURL))
 
 	v, err := g.SetView(i.name, i.x, i.y, i.w, i.h, 0)
 	if err != nil {
@@ -121,7 +139,31 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (i *SummaryWidget) prettyLines(input string, maxLength int) []string {
+func printSingleLine(source string, heading string, lines []string) []string {
+	if source != "" {
+		lines = append(lines, tml.Sprintf("<green>%s:</green>\n  %s\n", heading, source))
+	}
+	return lines
+}
+
+func printMultiline(source string, heading string, lines []string, maxLength int) []string {
+	if source != "" {
+		titleLines := prettyLines(source, maxLength)
+		first := true
+		for _, line := range titleLines {
+			if first {
+				lines = append(lines, tml.Sprintf("\n<green>%s:</green>\n  %s", heading, line))
+				first = false
+			} else {
+				lines = append(lines, tml.Sprintf("  %s", line))
+			}
+		}
+		lines = append(lines, "")
+	}
+	return lines
+}
+
+func prettyLines(input string, maxLength int) []string {
 	var lines []string
 	words := strings.Split(input, " ")
 
@@ -135,5 +177,9 @@ func (i *SummaryWidget) prettyLines(input string, maxLength int) []string {
 			line = w + " "
 		}
 	}
+	if len(lines) == 0 && line != "" {
+		lines = append(lines, line)
+	}
+
 	return lines
 }

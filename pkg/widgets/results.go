@@ -139,7 +139,7 @@ func (w *ResultsWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 		x, y, wi, h := v.Dimensions()
 
 		var vuln output.Vulnerability
-		if w.vulnerabilityIndex > 0 && w.vulnerabilityIndex < len(w.vulnerabilities) {
+		if w.vulnerabilityIndex >= 0 && w.vulnerabilityIndex < len(w.vulnerabilities) {
 			vuln = w.vulnerabilities[w.vulnerabilityIndex]
 		} else {
 			return nil
@@ -166,11 +166,10 @@ func (w *ResultsWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 
 func (w *ResultsWidget) previousResult(_ *gocui.Gui, v *gocui.View) error {
 	for {
-		_, y := w.v.Cursor()
-		if y > 3 {
+		if w.yPos+w.yOrigin > 3 {
 			v.MoveCursor(0, -1)
 			_, y := v.Cursor()
-			currentLine, err := v.Line(y)
+			currentLine, err := v.Line(y + w.yOrigin)
 			if err != nil {
 				return err
 			}
@@ -178,15 +177,27 @@ func (w *ResultsWidget) previousResult(_ *gocui.Gui, v *gocui.View) error {
 				break
 			}
 		} else {
-			break
+			return nil
 		}
 	}
+
+	_, height := v.Size()
+	if w.yPos == 0 {
+		// we're at the bottom of the list
+		w.page--
+		w.yOrigin = w.page * height
+		w.yPos = 0
+		if w.page == 0 {
+			w.yPos = height - 1
+		}
+	} else {
+		_, w.yPos = v.Cursor()
+	}
 	w.vulnerabilityIndex--
-	_, w.yPos = v.Cursor()
 	return nil
 }
 
-func (w *ResultsWidget) nextResult(_ *gocui.Gui, v *gocui.View) error {
+func (w *ResultsWidget) nextResult(g *gocui.Gui, v *gocui.View) error {
 	_, lastY := v.Cursor()
 	for {
 		v.MoveCursor(0, 1)
@@ -195,18 +206,28 @@ func (w *ResultsWidget) nextResult(_ *gocui.Gui, v *gocui.View) error {
 			return nil
 		}
 		lastY = y
-		currentLine, err := v.Line(y)
+		currentLine, err := v.Line(y + w.yOrigin)
 		if err != nil {
-			return err
+			return nil //nolint:nilerr
 		}
-
 		if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
 			break
 		}
 	}
 
-	w.vulnerabilityIndex++
 	_, w.yPos = v.Cursor()
+	_, h := v.Size() //nolint:ifshort
+	if w.yPos >= h {
+		// we're at the bottom of the list
+		w.page++
+		w.yOrigin = w.page * h
+		w.yPos = 0
+		if w.page == 0 {
+			w.yPos = 3
+		}
+	}
+
+	w.vulnerabilityIndex++
 
 	return nil
 }
@@ -302,6 +323,7 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report, imageWidth 
 	w.ctx.RefreshView(w.name)
 
 	w.yPos = 3
+	w.page = 0
 	w.yOrigin = 0
 	w.v.Subtitle = ""
 }
@@ -369,6 +391,7 @@ func (w *ResultsWidget) GenerateFilteredReport(severity string) {
 	w.ctx.RefreshView(w.name)
 	w.page = 0
 	w.yPos = 3
+	w.yOrigin = 0
 	w.vulnerabilityIndex = 0
 	w.v.Subtitle = fmt.Sprintf(" %s ", strings.Join(severities, " | "))
 }

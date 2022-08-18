@@ -41,7 +41,7 @@ func flowLayout(g *gocui.Gui) error {
 		w, _ := v.Size()
 		h := 1
 		nextW := w
-		nextH := maxY - 3
+		nextH := maxY - 4
 		nextX := x
 
 		switch v.Name() {
@@ -54,13 +54,13 @@ func flowLayout(g *gocui.Gui) error {
 			h = 4
 		case widgets.Status:
 			nextW = maxX - 1
-			h = maxY - 5
+			h = maxY - 6
 		case widgets.Results:
 			nextW = maxX - 1
-			nextH = maxY - 6
+			nextH = maxY - 7
 		case widgets.Menu:
 			nextX = 0
-			h = maxY - 3
+			h = maxY - 4
 			nextH = maxY
 		case widgets.Remote, widgets.Filter:
 			continue
