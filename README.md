@@ -1,5 +1,8 @@
 # lazytrivy
 
+> **Note**
+> It's functional and not too ugly, but I'd stay away from the code till I've refactored it :-D
+
 lazytrivy is a wrapper for [Trivy](https://github.com/aquasecurity/trivy) that allows you to run Trivy without
 remembering the command arguments.
 
