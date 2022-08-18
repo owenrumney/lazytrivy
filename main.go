@@ -25,7 +25,7 @@ func main() {
 		fail(err)
 	}
 
-	// Enter the run loop - its all in the gui from this point on
+	// Enter the run loop - it's all in the gui from this point on
 	if err := control.Run(); err != nil {
 		fail(err)
 	}

@@ -24,8 +24,8 @@ func (w *MenuWidget) RefreshView() {
 
 func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
 	menuItems := []string{
-		"<blue>[s]</blue>can", "scan <blue>[a]</blue>ll", "<blue>[r]</blue>emote", "<blue>[f]</blue>ilter results",
-		"<green>[i]</green>mage refresh", "<red>[c]</red>ancel scan", "<red>[q]</red>uit",
+		"<blue>[enter] or [s]</blue>can", "scan <blue>[a]</blue>ll", "<blue>[r]</blue>emote",
+		"<green>[i]</green>mage refresh", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
 	}
 
 	return &MenuWidget{

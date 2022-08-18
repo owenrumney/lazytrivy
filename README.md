@@ -1,8 +1,10 @@
 # lazytrivy
 
-lazytrivy is a wrapper for [Trivy](https://github.com/aquasecurity/trivy) that allows you to run Trivy without remembering the command arguments.
+lazytrivy is a wrapper for [Trivy](https://github.com/aquasecurity/trivy) that allows you to run Trivy without
+remembering the command arguments.
 
-The idea was very heavily inspired by the superb tools from [Jesse Duffield](https://github.com/jesseduffield) (lazydocker, lazynpm, lazygit)
+The idea was very heavily inspired by the superb tools from [Jesse Duffield](https://github.com/jesseduffield) (
+lazydocker, lazynpm, lazygit)
 
 ![Scan All Images](./.github/images/scan_all.png)
 
@@ -14,7 +16,7 @@ The quickest way to install if you have `Go` installed is to get the latest with
 go install github.com/owenrumney/lazytrivy@latest
 ```
 
-Alternatively, you can get the latest releases from [GitHub](https://github.com/owenrumney/lazytrivy) 
+Alternatively, you can get the latest releases from [GitHub](https://github.com/owenrumney/lazytrivy)
 
 ## Usage
 
@@ -26,7 +28,8 @@ lazytrivy
 
 ### Scanning all local images
 
-Pressing `a` will scan all of the images that are shown in the left hand pane. On completion, you will be shown a summary of any vulnerabilities found.
+Pressing `a` will scan all of the images that are shown in the left hand pane. On completion, you will be shown a
+summary of any vulnerabilities found.
 
 You can then scan individual images to get more details
 
@@ -34,7 +37,8 @@ You can then scan individual images to get more details
 
 ### Scanning a specific image
 
-Select an image from the left hand pane and press `s` to scan it. Use the left and right arrow keys to switch between views and up down arrow keys to select an image.
+Select an image from the left hand pane and press `s` to scan it. Use the left and right arrow keys to switch between
+views and up down arrow keys to select an image.
 
 Press `s` to scan the currently selected image.
 
