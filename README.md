@@ -31,7 +31,7 @@ lazytrivy
 
 ### Scanning all local images
 
-Pressing `a` will scan all of the images that are shown in the left hand pane. On completion, you will be shown a
+Pressing `a` will scan all the images that are shown in the left hand pane. On completion, you will be shown a
 summary of any vulnerabilities found.
 
 You can then scan individual images to get more details
