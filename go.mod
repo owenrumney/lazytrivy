@@ -3,10 +3,10 @@ module github.com/owenrumney/lazytrivy
 go 1.19
 
 require (
-	github.com/aquasecurity/table v1.7.3-0.20220815141603-41d2cf9bf8f4
 	github.com/awesome-gocui/gocui v1.1.0
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/liamg/tml v0.6.0
+	github.com/mattn/go-runewidth v0.0.13
 )
 
 require (
@@ -18,7 +18,6 @@ require (
 	github.com/gdamore/tcell/v2 v2.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/lucasb-eyer/go-colorful v1.0.3 // indirect
-	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -26,6 +25,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/stretchr/testify v1.7.1 // indirect
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
 	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
