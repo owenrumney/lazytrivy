@@ -14,15 +14,26 @@ type Result struct {
 	Vulnerabilities []Vulnerability
 }
 
+type DataSource struct {
+	ID   string
+	Name string
+	URL  string
+}
+
 type Vulnerability struct {
 	VulnerabilityID  string
+	DataSource       *DataSource
 	Title            string
 	Description      string
 	Severity         string
+	SeveritySource   string
 	PkgName          string
+	PkgPath          string
 	PrimaryURL       string
 	InstalledVersion string
 	FixedVersion     string
+	References       []string
+	CVSS             map[string]interface{}
 }
 
 func FromJSON(imageName string, content string) (*Report, error) {
