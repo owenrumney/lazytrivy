@@ -95,7 +95,7 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, view *gocui.View) error {
+func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, _ *gocui.View) error {
 	w.v.MoveCursor(0, -1)
 
 	_, y := w.v.Cursor()
@@ -105,7 +105,7 @@ func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, view *gocui.View) error {
 	return nil
 }
 
-func (w *ImagesWidget) NextImage(_ *gocui.Gui, view *gocui.View) error {
+func (w *ImagesWidget) NextImage(_ *gocui.Gui, _ *gocui.View) error {
 	w.v.MoveCursor(0, 1)
 
 	_, y := w.v.Cursor()

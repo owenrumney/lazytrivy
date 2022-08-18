@@ -164,7 +164,7 @@ func (w *ResultsWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (w *ResultsWidget) previousResult(g *gocui.Gui, v *gocui.View) error {
+func (w *ResultsWidget) previousResult(_ *gocui.Gui, v *gocui.View) error {
 	for {
 		_, y := w.v.Cursor()
 		if y > 3 {
@@ -186,7 +186,7 @@ func (w *ResultsWidget) previousResult(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (w *ResultsWidget) nextResult(g *gocui.Gui, v *gocui.View) error {
+func (w *ResultsWidget) nextResult(_ *gocui.Gui, v *gocui.View) error {
 	_, lastY := v.Cursor()
 	for {
 		v.MoveCursor(0, 1)
@@ -289,11 +289,11 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report, imageWidth 
 	for _, report := range reports {
 		row := []string{
 			fmt.Sprintf(" % -*s", width-50, report.ImageName),
-			tml.Sprintf("<bold><red>% 11d</red></bold>", (report.SeverityCount["CRITICAL"])),
-			tml.Sprintf("<red>% 7d</red>", (report.SeverityCount["HIGH"])),
-			tml.Sprintf("<yellow>% 9d</yellow>", (report.SeverityCount["MEDIUM"])),
-			tml.Sprintf("% 6d", (report.SeverityCount["LOW"])),
-			tml.Sprintf("% 10d ", (report.SeverityCount["UNKNOWN"])),
+			tml.Sprintf("<bold><red>% 11d</red></bold>", report.SeverityCount["CRITICAL"]),
+			tml.Sprintf("<red>% 7d</red>", report.SeverityCount["HIGH"]),
+			tml.Sprintf("<yellow>% 9d</yellow>", report.SeverityCount["MEDIUM"]),
+			tml.Sprintf("% 6d", report.SeverityCount["LOW"]),
+			tml.Sprintf("% 10d ", report.SeverityCount["UNKNOWN"]),
 		}
 		bodyContent = append(bodyContent, strings.Join(row, ""))
 	}
