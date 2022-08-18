@@ -48,7 +48,6 @@ func NewInputWidget(name string, maxX, maxY, maxLength int, ctx ctx) (*InputWidg
 			return err
 		}
 		return gui.DeleteView(Remote)
-
 	}); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}

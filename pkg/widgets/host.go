@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/liamg/tml"
 )
 
 type HostWidget struct {
@@ -44,8 +45,9 @@ func (w *HostWidget) Layout(g *gocui.Gui) error {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
-		_, _ = fmt.Fprintf(v, w.body)
+		_ = tml.Fprintf(v, " <blue>%s</blue>", w.body)
 	}
+
 	v.Title = " Host "
 	w.v = v
 	return nil

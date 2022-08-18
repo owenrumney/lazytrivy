@@ -17,7 +17,6 @@ func (a ansiBlob) Truncate(maxLen int) (string, int) {
 	var output string
 	var total int
 	for _, segment := range a {
-
 		value := segment.value
 		if runewidth.StringWidth(segment.value) > maxLen {
 			value = value[:maxLen]
@@ -97,7 +96,7 @@ func (a ansiBlob) Cut(index int) (ansiBlob, ansiBlob) {
 }
 
 func (a ansiBlob) Words() []ansiBlob {
-	var output []ansiBlob
+	var output []ansiBlob // nolint:prealloc
 	words := strings.Split(a.String(), " ")
 	var ansi string
 	for _, word := range words {
@@ -122,7 +121,7 @@ func newANSI(input string) ansiBlob {
 	inCSI := false
 	prev := rune(0)
 	for _, r := range input {
-		if inCSI {
+		if inCSI { //nolint:gocritic
 			current.style += string(r)
 			if r >= 0x40 && r <= 0x7E {
 				inCSI = false
@@ -136,7 +135,7 @@ func newANSI(input string) ansiBlob {
 			inCSI = true
 			current.style += "\x1b["
 		} else {
-			current.value = current.value + string(r)
+			current.value += string(r)
 		}
 		prev = r
 	}

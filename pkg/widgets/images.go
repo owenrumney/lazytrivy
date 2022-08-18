@@ -21,7 +21,6 @@ type ImagesWidget struct {
 }
 
 func NewImagesWidget(name string, g ctx) *ImagesWidget {
-
 	w := 25
 
 	widget := &ImagesWidget{
@@ -119,9 +118,9 @@ func (w *ImagesWidget) NextImage(_ *gocui.Gui, view *gocui.View) error {
 func (w *ImagesWidget) RefreshImages(images []string, imageWidth int) error {
 	w.w = imageWidth + 4
 
-	var imageList []string
-	for _, image := range images {
-		imageList = append(imageList, fmt.Sprintf(" % -*s", imageWidth+1, image))
+	imageList := make([]string, len(images))
+	for i, image := range images {
+		imageList[i] = fmt.Sprintf(" % -*s", imageWidth+1, image)
 	}
 
 	w.imageCount = len(imageList)

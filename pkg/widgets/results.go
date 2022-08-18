@@ -52,176 +52,19 @@ func NewResultsWidget(name string, g ctx) *ResultsWidget {
 }
 
 func (w *ResultsWidget) ConfigureKeys() error {
-
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-
-		_, lastY := v.Cursor()
-		for {
-			v.MoveCursor(0, 1)
-			_, y := v.Cursor()
-			if y == lastY {
-				return nil
-			}
-			lastY = y
-			currentLine, err := v.Line(y)
-			if err != nil {
-				return err
-			}
-
-			if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
-				break
-			}
-		}
-
-		w.vulnerabilityIndex++
-		_, w.yPos = v.Cursor()
-
-		return nil
-	}); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.nextResult); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		for {
-			_, y := w.v.Cursor()
-			if y > 3 {
-				v.MoveCursor(0, -1)
-				_, y := v.Cursor()
-				currentLine, err := v.Line(y)
-				if err != nil {
-					return err
-				}
-				if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
-					break
-				}
-			} else {
-				break
-			}
-		}
-		w.vulnerabilityIndex--
-		_, w.yPos = v.Cursor()
-		return nil
-	}); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.previousResult); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, 'e', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if w.currentReport == nil {
-			return nil
-		}
-		w.GenerateFilteredReport("ALL")
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w")
-	}
-
-	if err := w.ctx.SetKeyBinding(w.name, 'c', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if w.currentReport == nil {
-			return nil
-		}
-		if w.currentReport.SeverityCount["CRITICAL"] > 0 {
-			w.GenerateFilteredReport("CRITICAL")
-		}
-
-		return nil
-	}); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, w.diveDeeper); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, 'h', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if w.currentReport == nil {
-			return nil
-		}
-		if w.currentReport.SeverityCount["HIGH"] > 0 {
-			w.GenerateFilteredReport("HIGH")
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w", err)
-	}
-
-	if err := w.ctx.SetKeyBinding(w.name, 'm', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if w.currentReport == nil {
-			return nil
-		}
-		if w.currentReport.SeverityCount["MEDIUM"] > 0 {
-			w.GenerateFilteredReport("MEDIUM")
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w", err)
-	}
-
-	if err := w.ctx.SetKeyBinding(w.name, 'l', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if w.currentReport == nil {
-			return nil
-		}
-		if w.currentReport.SeverityCount["LOW"] > 0 {
-			w.GenerateFilteredReport("LOW")
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w", err)
-	}
-
-	if err := w.ctx.SetKeyBinding(w.name, 'u', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if w.currentReport == nil {
-			return nil
-		}
-		if w.currentReport.SeverityCount["UNKNOWN"] > 0 {
-			w.GenerateFilteredReport("UNKNOWN")
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w", err)
-	}
-
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		switch w.mode {
-		case SummaryResultMode:
-			_, y := w.v.Cursor()
-			w.currentReport = w.reports[y-3]
-			w.GenerateFilteredReport("ALL")
-		case DetailsResultMode:
-			x, y, wi, h := v.Dimensions()
-
-			var vuln output.Vulnerability
-			if w.vulnerabilityIndex > 0 && w.vulnerabilityIndex < len(w.vulnerabilities) {
-				vuln = w.vulnerabilities[w.vulnerabilityIndex]
-			} else {
-				return nil
-			}
-
-			summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, vuln)
-			if err != nil {
-				return err
-			}
-			g.Update(func(g *gocui.Gui) error {
-				if err := summary.Layout(g); err != nil {
-					return fmt.Errorf("failed to layout remote input: %w", err)
-				}
-				_, err := g.SetCurrentView("summary")
-				if err != nil {
-					return fmt.Errorf("failed to set current view: %w", err)
-				}
-				return nil
-			})
-		}
-
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w", err)
-	}
-
-	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		if w.mode == SummaryResultMode {
-			_, y := w.v.Cursor()
-			w.currentReport = w.reports[y-3]
-			w.GenerateFilteredReport("ALL")
-		}
-
-		return nil
-	}); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, w.diveDeeper); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
@@ -233,6 +76,137 @@ func (w *ResultsWidget) ConfigureKeys() error {
 	}); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
+
+	err := w.addFilteringKeyBindings()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (w *ResultsWidget) addFilteringKeyBinding(key rune, severity string) error {
+	if err := w.ctx.SetKeyBinding(w.name, key, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if w.currentReport == nil {
+			return nil
+		}
+		switch severity {
+		case "ALL":
+			w.GenerateFilteredReport(severity)
+		default:
+			if w.currentReport.SeverityCount[severity] > 0 {
+				w.GenerateFilteredReport(severity)
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w", err)
+	}
+	return nil
+}
+
+func (w *ResultsWidget) addFilteringKeyBindings() error {
+	if err := w.addFilteringKeyBinding('e', "ALL"); err != nil {
+		return err
+	}
+	if err := w.addFilteringKeyBinding('c', "CRITICAL"); err != nil {
+		return err
+	}
+	if err := w.addFilteringKeyBinding('h', "HIGH"); err != nil {
+		return err
+	}
+	if err := w.addFilteringKeyBinding('m', "MEDIUM"); err != nil {
+		return err
+	}
+	if err := w.addFilteringKeyBinding('l', "LOW"); err != nil {
+		return err
+	}
+	if err := w.addFilteringKeyBinding('u', "UNKNOWN"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (w *ResultsWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
+	switch w.mode {
+	case SummaryResultMode:
+		_, y := w.v.Cursor()
+		w.currentReport = w.reports[y-3]
+		w.GenerateFilteredReport("ALL")
+	case DetailsResultMode:
+		x, y, wi, h := v.Dimensions()
+
+		var vuln output.Vulnerability
+		if w.vulnerabilityIndex > 0 && w.vulnerabilityIndex < len(w.vulnerabilities) {
+			vuln = w.vulnerabilities[w.vulnerabilityIndex]
+		} else {
+			return nil
+		}
+
+		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, vuln)
+		if err != nil {
+			return err
+		}
+		g.Update(func(g *gocui.Gui) error {
+			if err := summary.Layout(g); err != nil {
+				return fmt.Errorf("failed to layout remote input: %w", err)
+			}
+			_, err := g.SetCurrentView("summary")
+			if err != nil {
+				return fmt.Errorf("failed to set current view: %w", err)
+			}
+			return nil
+		})
+	}
+
+	return nil
+}
+
+func (w *ResultsWidget) previousResult(g *gocui.Gui, v *gocui.View) error {
+	for {
+		_, y := w.v.Cursor()
+		if y > 3 {
+			v.MoveCursor(0, -1)
+			_, y := v.Cursor()
+			currentLine, err := v.Line(y)
+			if err != nil {
+				return err
+			}
+			if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
+				break
+			}
+		} else {
+			break
+		}
+	}
+	w.vulnerabilityIndex--
+	_, w.yPos = v.Cursor()
+	return nil
+}
+
+func (w *ResultsWidget) nextResult(g *gocui.Gui, v *gocui.View) error {
+	_, lastY := v.Cursor()
+	for {
+		v.MoveCursor(0, 1)
+		_, y := v.Cursor()
+		if y == lastY {
+			return nil
+		}
+		lastY = y
+		currentLine, err := v.Line(y)
+		if err != nil {
+			return err
+		}
+
+		if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
+			break
+		}
+	}
+
+	w.vulnerabilityIndex++
+	_, w.yPos = v.Cursor()
 
 	return nil
 }
@@ -298,7 +272,7 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report, imageWidth 
 	w.imageWidth = imageWidth
 
 	width, _ := w.v.Size()
-	var bodyContent []string
+	var bodyContent []string //nolint:prealloc
 
 	headers := []string{
 		fmt.Sprintf("\n Image% *s", width-55, ""),
@@ -309,8 +283,8 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report, imageWidth 
 		"   Unknown ",
 	}
 
-	bodyContent = append(bodyContent, fmt.Sprintf("%s", strings.Join(headers, "")))
-	bodyContent = append(bodyContent, fmt.Sprintf("%s", strings.Repeat("─", width)))
+	bodyContent = append(bodyContent, strings.Join(headers, ""))
+	bodyContent = append(bodyContent, strings.Repeat("─", width))
 
 	for _, report := range reports {
 		row := []string{
@@ -321,7 +295,7 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report, imageWidth 
 			tml.Sprintf("% 6d", (report.SeverityCount["LOW"])),
 			tml.Sprintf("% 10d ", (report.SeverityCount["UNKNOWN"])),
 		}
-		bodyContent = append(bodyContent, fmt.Sprintf("%s", strings.Join(row, "")))
+		bodyContent = append(bodyContent, strings.Join(row, ""))
 	}
 
 	w.body = bodyContent
@@ -330,7 +304,6 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report, imageWidth 
 	w.yPos = 3
 	w.yOrigin = 0
 	w.v.Subtitle = ""
-
 }
 
 func (w *ResultsWidget) RenderReport(report *output.Report, severity string) {
@@ -368,7 +341,7 @@ func (w *ResultsWidget) GenerateFilteredReport(severity string) {
 		results = w.currentReport.Results
 	}
 
-	var bodyContent []string
+	var bodyContent []string //nolint:prealloc
 
 	for _, result := range results {
 		if len(result.Vulnerabilities) == 0 {

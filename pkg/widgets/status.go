@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/liamg/tml"
 )
 
 type StatusWidget struct {
@@ -40,8 +41,9 @@ func (w *StatusWidget) Layout(g *gocui.Gui) error {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
-		_, _ = fmt.Fprintf(v, w.body)
+		_, _ = fmt.Fprintf(v, " %s", w.body)
 	}
+
 	v.Title = " Status "
 	w.v = v
 	return nil
@@ -54,5 +56,5 @@ func (w *StatusWidget) UpdateStatus(status string) {
 
 func (w *StatusWidget) RefreshView() {
 	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	_ = tml.Fprintf(w.v, " <blue>%s</blue>", w.body)
 }

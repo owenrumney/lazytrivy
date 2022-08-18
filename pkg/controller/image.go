@@ -26,7 +26,7 @@ func (g *Controller) ScanImage(ctx context.Context, imageName string) {
 			return
 		}
 		g.cui.Update(func(gocui *gocui.Gui) error {
-			return g.renderResultsReport(imageName, report)
+			return g.renderResultsReport(report)
 		})
 	}()
 }

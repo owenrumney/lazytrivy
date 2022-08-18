@@ -163,7 +163,7 @@ func (g *Controller) scanRemote(gui *gocui.Gui, _ *gocui.View) error {
 	return nil
 }
 
-func (g *Controller) renderResultsReport(imageName string, report *output.Report) error {
+func (g *Controller) renderResultsReport(report *output.Report) error {
 	if v, ok := g.views[widgets.Results].(*widgets.ResultsWidget); ok {
 		v.RenderReport(report, "ALL")
 		_, err := g.cui.SetCurrentView(widgets.Results)

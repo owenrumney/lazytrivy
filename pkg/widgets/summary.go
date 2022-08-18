@@ -15,12 +15,10 @@ type SummaryWidget struct {
 	name string
 	x, y int
 	w, h int
-	ctx  ctx
 	vuln output.Vulnerability
 }
 
 func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output.Vulnerability) (*SummaryWidget, error) {
-
 	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if len(view.BufferLines()) > 0 {
 			if image, _ := view.Line(0); image != "" {
@@ -49,7 +47,6 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output
 			return err
 		}
 		return gui.DeleteView("summary")
-
 	}); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -61,7 +58,6 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output
 			return err
 		}
 		return gui.DeleteView("summary")
-
 	}); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -117,7 +113,7 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 		}
 	}
 
-	fmt.Fprintln(v, strings.Join(lines, "\n"))
+	_, _ = fmt.Fprintln(v, strings.Join(lines, "\n"))
 	v.Title = fmt.Sprintf(" Summary for %s ", i.vuln.VulnerabilityID)
 	v.Wrap = true
 	v.TitleColor = gocui.ColorGreen
