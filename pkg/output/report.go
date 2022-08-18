@@ -4,8 +4,8 @@ import "encoding/json"
 
 type Report struct {
 	ImageName     string
-	Results       []Result
-	SeverityMap   map[string][]Result
+	Results       []*Result
+	SeverityMap   map[string][]*Result
 	SeverityCount map[string]int
 }
 
@@ -37,17 +37,17 @@ func FromJSON(imageName string, content string) (*Report, error) {
 }
 
 func (r *Report) processReport() {
-	r.SeverityMap = make(map[string][]Result)
+	r.SeverityMap = make(map[string][]*Result)
 	r.SeverityCount = make(map[string]int)
 
 	for _, result := range r.Results {
 		for _, v := range result.Vulnerabilities {
 			if _, ok := r.SeverityMap[v.Severity]; !ok {
-				r.SeverityMap[v.Severity] = make([]Result, 0)
+				r.SeverityMap[v.Severity] = make([]*Result, 0)
 			}
 			sevMap := r.SeverityMap[v.Severity]
 
-			var foundResult Result
+			var foundResult *Result
 			var found bool
 			for _, t := range sevMap {
 				if result.Target == t.Target {
@@ -57,13 +57,16 @@ func (r *Report) processReport() {
 					break
 				}
 			}
-			if !found {
-				foundResult = Result{
+			if found {
+				foundResult.Vulnerabilities = append(foundResult.Vulnerabilities, v)
+			} else {
+				foundResult = &Result{
 					Target:          result.Target,
 					Vulnerabilities: []Vulnerability{v},
 				}
+				sevMap = append(sevMap, foundResult)
 			}
-			sevMap = append(sevMap, foundResult)
+
 			r.SeverityMap[v.Severity] = sevMap
 			r.SeverityCount[v.Severity]++
 		}

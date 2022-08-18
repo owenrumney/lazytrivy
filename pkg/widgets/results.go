@@ -6,72 +6,283 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/aquasecurity/table"
 	"github.com/awesome-gocui/gocui"
 	"github.com/liamg/tml"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
-type InfoWidget struct {
-	name          string
-	x, y          int
-	w, h          int
-	body          string
-	v             *gocui.View
-	ctx           ctx
-	currentReport *output.Report
+type ResultsMode int
+
+const (
+	SummaryResultMode = iota
+	DetailsResultMode
+)
+
+type ResultsWidget struct {
+	name               string
+	x, y               int
+	w, h               int
+	body               []string
+	v                  *gocui.View
+	ctx                ctx
+	currentReport      *output.Report
+	reports            []*output.Report
+	vulnerabilities    []output.Vulnerability
+	vulnerabilityIndex int
+	mode               ResultsMode
+	imageWidth         int
+	yPos               int
+	yOrigin            int
+	page               int
 }
 
-func NewInfoWidget(name string, g ctx) *InfoWidget {
-	widget := &InfoWidget{
+func NewResultsWidget(name string, g ctx) *ResultsWidget {
+	widget := &ResultsWidget{
 		name: name,
 		x:    0,
 		y:    0,
 		w:    10,
 		h:    10,
 		v:    nil,
+		body: []string{},
 		ctx:  g,
 	}
 
 	return widget
 }
 
-func (w *InfoWidget) ConfigureKeys() error {
-	if err := w.ctx.SetKeyBinding(w.name, gocui.MouseWheelDown, gocui.ModNone, w.ScrollDown); err != nil {
+func (w *ResultsWidget) ConfigureKeys() error {
+
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+
+		_, lastY := v.Cursor()
+		for {
+			v.MoveCursor(0, 1)
+			_, y := v.Cursor()
+			if y == lastY {
+				return nil
+			}
+			lastY = y
+			currentLine, err := v.Line(y)
+			if err != nil {
+				return err
+			}
+
+			if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
+				break
+			}
+		}
+
+		w.vulnerabilityIndex++
+		_, w.yPos = v.Cursor()
+
+		return nil
+	}); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, gocui.MouseWheelUp, gocui.ModNone, w.ScrollUp); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		for {
+			_, y := w.v.Cursor()
+			if y > 3 {
+				v.MoveCursor(0, -1)
+				_, y := v.Cursor()
+				currentLine, err := v.Line(y)
+				if err != nil {
+					return err
+				}
+				if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
+					break
+				}
+			} else {
+				break
+			}
+		}
+		w.vulnerabilityIndex--
+		_, w.yPos = v.Cursor()
+		return nil
+	}); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, 'f', gocui.ModNone, w.CreateFilterView); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, 'e', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if w.currentReport == nil {
+			return nil
+		}
+		w.GenerateFilteredReport("ALL")
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w")
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 'c', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if w.currentReport == nil {
+			return nil
+		}
+		if w.currentReport.SeverityCount["CRITICAL"] > 0 {
+			w.GenerateFilteredReport("CRITICAL")
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w", err)
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 'h', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if w.currentReport == nil {
+			return nil
+		}
+		if w.currentReport.SeverityCount["HIGH"] > 0 {
+			w.GenerateFilteredReport("HIGH")
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w", err)
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 'm', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if w.currentReport == nil {
+			return nil
+		}
+		if w.currentReport.SeverityCount["MEDIUM"] > 0 {
+			w.GenerateFilteredReport("MEDIUM")
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w", err)
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 'l', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if w.currentReport == nil {
+			return nil
+		}
+		if w.currentReport.SeverityCount["LOW"] > 0 {
+			w.GenerateFilteredReport("LOW")
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w", err)
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 'u', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		if w.currentReport == nil {
+			return nil
+		}
+		if w.currentReport.SeverityCount["UNKNOWN"] > 0 {
+			w.GenerateFilteredReport("UNKNOWN")
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w", err)
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		switch w.mode {
+		case SummaryResultMode:
+			_, y := w.v.Cursor()
+			w.currentReport = w.reports[y-3]
+			w.GenerateFilteredReport("ALL")
+		case DetailsResultMode:
+			x, y, wi, h := v.Dimensions()
+
+			var vuln output.Vulnerability
+			if w.vulnerabilityIndex > 0 && w.vulnerabilityIndex < len(w.vulnerabilities) {
+				vuln = w.vulnerabilities[w.vulnerabilityIndex]
+			} else {
+				return nil
+			}
+
+			summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, vuln)
+			if err != nil {
+				return err
+			}
+			g.Update(func(g *gocui.Gui) error {
+				if err := summary.Layout(g); err != nil {
+					return fmt.Errorf("failed to layout remote input: %w", err)
+				}
+				_, err := g.SetCurrentView("summary")
+				if err != nil {
+					return fmt.Errorf("failed to set current view: %w", err)
+				}
+				return nil
+			})
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w", err)
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		if w.mode == SummaryResultMode {
+			_, y := w.v.Cursor()
+			w.currentReport = w.reports[y-3]
+			w.GenerateFilteredReport("ALL")
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to set keybinding: %w", err)
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		if w.reports != nil && len(w.reports) > 0 {
+			w.UpdateResultsTable(w.reports, w.imageWidth)
+		}
+		return nil
+	}); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
 	return nil
 }
 
-func (w *InfoWidget) Layout(g *gocui.Gui) error {
-	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
+func (w *ResultsWidget) Layout(g *gocui.Gui) error {
+	v, err := g.View(w.name)
 	if err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return fmt.Errorf("%w", err)
+		v, err = g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
+		if err != nil {
+			if !errors.Is(err, gocui.ErrUnknownView) {
+				return fmt.Errorf("%w", err)
+			}
 		}
-		_ = tml.Fprintf(v, w.body)
 	}
+
+	v.Clear()
 	v.Title = " Results "
-	v.Wrap = true
+	v.Highlight = true
+	v.SelBgColor = gocui.ColorGreen
+	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
 	if g.CurrentView() == v {
 		v.FrameColor = gocui.ColorGreen
 	} else {
 		v.FrameColor = gocui.ColorDefault
 	}
+
+	width, _ := v.Size()
+	if w.v != nil {
+		width, _ = w.v.Size()
+	}
+
 	w.v = v
+	for _, line := range w.body {
+		switch w.mode {
+		case DetailsResultMode:
+			truncated, unencodedLength := truncateANSIString(line, width-1)
+			printer := fmt.Sprintf("%s%s", truncated, strings.Repeat(" ", width-unencodedLength))
+			_, _ = fmt.Fprintln(v, printer)
+		case SummaryResultMode:
+			_, _ = fmt.Fprintln(v, line)
+		}
+	}
+
+	_ = v.SetCursor(0, w.yPos)
+	_ = v.SetOrigin(0, w.yOrigin)
+
 	return nil
 }
 
-func (w *InfoWidget) Reset() {
+func (w *ResultsWidget) Reset() {
 	w.v.Clear()
 	w.v.Title = " Results "
 
@@ -81,111 +292,112 @@ func (w *InfoWidget) Reset() {
 	}
 }
 
-func (w *InfoWidget) ScrollDown(_ *gocui.Gui, view *gocui.View) error {
-	if view != nil {
-		view.Autoscroll = false
-		_, h := view.Size()
-		ox, oy := view.Origin()
-		newPos := oy + 3
-		if newPos > w.v.LinesHeight()-(h-200) {
-			return nil
-		}
-		_ = view.SetOrigin(ox, newPos)
+func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report, imageWidth int) {
+	w.mode = SummaryResultMode
+	w.reports = reports
+	w.imageWidth = imageWidth
+
+	width, _ := w.v.Size()
+	var bodyContent []string
+
+	headers := []string{
+		fmt.Sprintf("\n Image% *s", width-55, ""),
+		"   Critical",
+		"   High",
+		"   Medium",
+		"   Low",
+		"   Unknown ",
 	}
-	return nil
-}
 
-func (w *InfoWidget) ScrollUp(_ *gocui.Gui, view *gocui.View) error {
-	if view != nil {
-		view.Autoscroll = false
-		ox, oy := view.Origin()
-		newPos := oy - 3
-		if newPos < 0 {
-			return nil
-		}
-		_ = view.SetOrigin(ox, newPos)
-	}
-	return nil
-}
-
-func (w *InfoWidget) UpdateResultsTable(reports []*output.Report) {
-	w.v.Clear()
-
-	t := table.New(w.v)
-	t.AddHeaders("Image", "Critical", "High", "Medium", "Low", "Unknown")
-	t.SetHeaderAlignment(table.AlignLeft)
-	t.SetAlignment(table.AlignLeft, table.AlignCenter, table.AlignCenter, table.AlignCenter, table.AlignCenter, table.AlignCenter, table.AlignCenter)
+	bodyContent = append(bodyContent, fmt.Sprintf("%s", strings.Join(headers, "")))
+	bodyContent = append(bodyContent, fmt.Sprintf("%s", strings.Repeat("─", width)))
 
 	for _, report := range reports {
-		t.AddRow(report.ImageName,
-			tml.Sprintf("<bold><red>%d</red></bold>", (report.SeverityCount["CRITICAL"])),
-			tml.Sprintf("<red>%d</red>", (report.SeverityCount["HIGH"])),
-			tml.Sprintf("<yellow>%d</yellow>", (report.SeverityCount["MEDIUM"])),
-			tml.Sprintf("%d", (report.SeverityCount["LOW"])),
-			tml.Sprintf("%d", (report.SeverityCount["UNKNOWN"])))
+		row := []string{
+			fmt.Sprintf(" % -*s", width-50, report.ImageName),
+			tml.Sprintf("<bold><red>% 11d</red></bold>", (report.SeverityCount["CRITICAL"])),
+			tml.Sprintf("<red>% 7d</red>", (report.SeverityCount["HIGH"])),
+			tml.Sprintf("<yellow>% 9d</yellow>", (report.SeverityCount["MEDIUM"])),
+			tml.Sprintf("% 6d", (report.SeverityCount["LOW"])),
+			tml.Sprintf("% 10d ", (report.SeverityCount["UNKNOWN"])),
+		}
+		bodyContent = append(bodyContent, fmt.Sprintf("%s", strings.Join(row, "")))
 	}
 
-	_ = tml.Fprintf(w.v, `
-Trivy has scanned <green>%d</green> images for vulnerabilities.
-
-`, len(reports))
-
-	t.Render()
-
-	_, _ = fmt.Fprintf(w.v, `
-
-For more information about an images vulnerabilities', select from the image list on the left to do a more specific scan.
-
-
-`)
+	w.body = bodyContent
 	w.ctx.RefreshView(w.name)
+
+	w.yPos = 3
+	w.yOrigin = 0
+	w.v.Subtitle = ""
+
 }
 
-func (w *InfoWidget) RenderReport(report *output.Report, imageName string, severity string) {
+func (w *ResultsWidget) RenderReport(report *output.Report, severity string) {
 	w.currentReport = report
 
-	w.GenerateFilteredReport(imageName, severity)
+	w.GenerateFilteredReport(severity)
 }
 
-func (w *InfoWidget) GenerateFilteredReport(imageName string, severity string) {
-	w.Reset()
+func (w *ResultsWidget) GenerateFilteredReport(severity string) {
+	if w.currentReport == nil {
+		return
+	}
+	w.mode = DetailsResultMode
+	w.vulnerabilities = []output.Vulnerability{}
 
-	var blocks []string // nolint:prealloc
+	var severities []string
+	if w.reports != nil && len(w.reports) > 0 {
+		severities = append(severities, "[B]ack")
+	}
+	severities = append(severities, "[E]verything")
 
-	var results []output.Result
+	for _, sev := range []string{"CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"} {
+		if count, ok := w.currentReport.SeverityCount[sev]; ok {
+			if count == 0 {
+				continue
+			}
+			severities = append(severities, fmt.Sprintf("[%s]%s", sev[:1], strings.ToLower(sev[1:])))
+		}
+	}
+
+	var results []*output.Result
 	if severity != "ALL" {
 		results = w.currentReport.SeverityMap[severity]
 	} else {
 		results = w.currentReport.Results
 	}
 
+	var bodyContent []string
+
 	for _, result := range results {
 		if len(result.Vulnerabilities) == 0 {
 			continue
 		}
 
-		var vulnerabilities []string
+		bodyContent = append(bodyContent, tml.Sprintf("\n  <bold>Target:</bold> <blue>%s</blue>\n", result.Target))
 
 		sort.Slice(result.Vulnerabilities, func(i, j int) bool {
 			return result.Vulnerabilities[i].Severity < result.Vulnerabilities[j].Severity //nolint:scopelint
 		})
 
 		for _, v := range result.Vulnerabilities {
-			severityOpener, severityCloser := colouredSeverity(v.Severity)
+			f, b := colouredSeverity(v.Severity)
+			toPrint := fmt.Sprintf("  %s % -16s %s", tml.Sprintf(f+"% -10s"+b, v.Severity),
+				v.VulnerabilityID, v.Title)
 
-			vulnerabilities = append(vulnerabilities, fmt.Sprintf(`  
-  %[1]s┌[%[3]s]%[2]s
-  %[1]s│%[2]s ID:        %[4]s
-  %[1]s│%[2]s Title:     %[5]s
-  %[1]s│%[2]s Package:   %[6]s
-  %[1]s│%[2]s More Info: <blue>%[7]s</blue>
-  %[1]s└─%[2]s`, severityOpener, severityCloser, v.Severity, v.VulnerabilityID, v.Title, v.PkgName, v.PrimaryURL))
+			bodyContent = append(bodyContent, toPrint)
+			w.vulnerabilities = append(w.vulnerabilities, v)
 		}
-		blocks = append(blocks, fmt.Sprintf("\n  <bold><blue>%s</blue></bold>\n%s", result.Target, strings.Join(vulnerabilities, "\n")))
 	}
 
-	w.v.Subtitle = imageName
-	_ = tml.Fprintf(w.v, strings.Join(blocks, "\n"))
+	w.body = bodyContent
+
+	w.ctx.RefreshView(w.name)
+	w.page = 0
+	w.yPos = 3
+	w.vulnerabilityIndex = 0
+	w.v.Subtitle = fmt.Sprintf(" %s ", strings.Join(severities, " | "))
 }
 
 func colouredSeverity(severity string) (string, string) {
@@ -196,78 +408,16 @@ func colouredSeverity(severity string) (string, string) {
 		return "<red>", "</red>"
 	case "MEDIUM":
 		return "<yellow>", "</yellow>"
+	case "LOW":
+		return "<blue>", "</blue>"
 	default:
 		return "", ""
 	}
 }
 
-func (w *InfoWidget) RefreshView() {
+func (w *ResultsWidget) RefreshView() {
 }
 
-func (w *InfoWidget) CreateFilterView(gui *gocui.Gui, view *gocui.View) error {
-	if w.currentReport == nil {
-		return nil
-	}
-
-	colourSevs := []string{"Click severity to apply filter:", "<green>ALL</green>"}
-	sevs := []string{"Click severity to apply filter:", "ALL"}
-
-	for _, sev := range []string{"CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"} {
-		if count, ok := w.currentReport.SeverityCount[sev]; ok {
-			if count == 0 {
-				continue
-			}
-			left, right := colouredSeverity(sev)
-			colourSevs = append(colourSevs, left+sev+right)
-			sevs = append(sevs, sev)
-		}
-	}
-
-	colourSevs = append(colourSevs, "[EXIT]")
-	x, _, width, h := view.Dimensions()
-
-	v, err := gui.SetView(Filter, x+1, h-3, width-1, h-1, 0)
-	if err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return fmt.Errorf("%w", err)
-		}
-		_ = tml.Fprintf(v, strings.Join(colourSevs, " | "))
-	}
-
-	if err := gui.SetKeybinding(Filter, 'x', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if err := gui.DeleteView(Filter); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	if err := gui.SetKeybinding(Filter, gocui.MouseLeft, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		x, _ := view.Cursor()
-		pos := 0
-		start := 0
-		selectedSeverity := ""
-		for _, s := range sevs {
-			pos += len(s)
-			if start < x && x <= pos {
-				selectedSeverity = s
-
-				break
-			}
-			start = pos + 3
-			pos = start
-		}
-		if selectedSeverity != "" && selectedSeverity != "Click severity to apply filter:" {
-			w.GenerateFilteredReport(w.currentReport.ImageName, selectedSeverity)
-		}
-		_ = gui.DeleteView(Filter)
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w", err)
-	}
-
-	v.Frame = true
-	v.FrameColor = gocui.ColorYellow
-	return nil
+func (w *ResultsWidget) CurrentReport() *output.Report {
+	return w.currentReport
 }

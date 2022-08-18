@@ -17,15 +17,8 @@ func (g *Controller) configureGlobalKeys() error {
 		return fmt.Errorf("error setting keybinding for quitting with Ctrl+C: %w", err)
 	}
 
-	if err := g.cui.SetKeybinding("", 'c', gocui.ModNone, g.CancelCurrentScan); err != nil {
+	if err := g.cui.SetKeybinding("", 't', gocui.ModNone, g.CancelCurrentScan); err != nil {
 		return fmt.Errorf("error setting keybinding for cancelling current scan: %w", err)
-	}
-
-	if err := g.cui.SetKeybinding("", 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		g.ScanImage(context.Background(), g.selectedImage)
-		return nil
-	}); err != nil {
-		return fmt.Errorf("error setting keybinding for scanning image: %w", err)
 	}
 
 	if err := g.cui.SetKeybinding("", 'a', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
@@ -56,7 +49,7 @@ func (g *Controller) configureGlobalKeys() error {
 				return fmt.Errorf("error getting the images view: %w", err)
 			}
 			if v, ok := g.views[widgets.Images].(*widgets.ImagesWidget); ok {
-				return v.SetSelectedImage(g.selectedImage)
+				return v.SetSelectedImage(g.state.selectedImage)
 			}
 		}
 		return nil
@@ -67,11 +60,14 @@ func (g *Controller) configureGlobalKeys() error {
 	if err := g.cui.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if g.cui.CurrentView().Name() == widgets.Images {
 			_, err := g.cui.SetCurrentView(widgets.Results)
-			return fmt.Errorf("error getting the results view: %w", err)
+			if err != nil {
+				return fmt.Errorf("error getting the results view: %w", err)
+			}
 		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("error setting keybinding for moving right: %w", err)
 	}
+
 	return nil
 }
