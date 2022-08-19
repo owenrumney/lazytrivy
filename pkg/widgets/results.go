@@ -24,7 +24,7 @@ type ResultsWidget struct {
 	w, h               int
 	body               []string
 	v                  *gocui.View
-	ctx                ctx
+	ctx                vulnerabilityContext
 	currentReport      *output.Report
 	reports            []*output.Report
 	vulnerabilities    []output.Vulnerability
@@ -36,7 +36,7 @@ type ResultsWidget struct {
 	page               int
 }
 
-func NewResultsWidget(name string, g ctx) *ResultsWidget {
+func NewResultsWidget(name string, g vulnerabilityContext) *ResultsWidget {
 	widget := &ResultsWidget{
 		name: name,
 		x:    0,
@@ -70,7 +70,7 @@ func (w *ResultsWidget) ConfigureKeys() error {
 
 	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 		if w.reports != nil && len(w.reports) > 0 {
-			w.UpdateResultsTable(w.reports, w.imageWidth)
+			w.UpdateResultsTable(w.reports)
 		}
 		return nil
 	}); err != nil {
@@ -197,7 +197,7 @@ func (w *ResultsWidget) previousResult(_ *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (w *ResultsWidget) nextResult(g *gocui.Gui, v *gocui.View) error {
+func (w *ResultsWidget) nextResult(_ *gocui.Gui, v *gocui.View) error {
 	_, lastY := v.Cursor()
 	for {
 		v.MoveCursor(0, 1)
@@ -287,12 +287,13 @@ func (w *ResultsWidget) Reset() {
 	}
 }
 
-func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report, imageWidth int) {
+func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report) {
 	w.mode = SummaryResultMode
 	w.reports = reports
-	w.imageWidth = imageWidth
 
 	width, _ := w.v.Size()
+	imageWidth := width - 50
+	w.imageWidth = imageWidth
 	var bodyContent []string //nolint:prealloc
 
 	headers := []string{
@@ -373,7 +374,7 @@ func (w *ResultsWidget) GenerateFilteredReport(severity string) {
 		bodyContent = append(bodyContent, tml.Sprintf("\n  <bold>Target:</bold> <blue>%s</blue>\n", result.Target))
 
 		sort.Slice(result.Vulnerabilities, func(i, j int) bool {
-			return result.Vulnerabilities[i].Severity < result.Vulnerabilities[j].Severity //nolint:scopelint
+			return severityAsInt(result.Vulnerabilities[i].Severity) < severityAsInt(result.Vulnerabilities[j].Severity) //nolint:scopelint
 		})
 
 		for _, v := range result.Vulnerabilities {
@@ -394,6 +395,23 @@ func (w *ResultsWidget) GenerateFilteredReport(severity string) {
 	w.yOrigin = 0
 	w.vulnerabilityIndex = 0
 	w.v.Subtitle = fmt.Sprintf(" %s ", strings.Join(severities, " | "))
+}
+
+func severityAsInt(severity string) int {
+	switch severity {
+	case "CRITICAL":
+		return 0
+	case "HIGH":
+		return 1
+	case "MEDIUM":
+		return 2
+	case "LOW":
+		return 3
+	case "UNKNOWN":
+		return 5
+	default:
+		return -1
+	}
 }
 
 func colouredSeverity(severity string) (string, string) {

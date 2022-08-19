@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/owenrumney/lazytrivy/pkg/controller"
+	"github.com/owenrumney/lazytrivy/pkg/controllers/gui"
 )
 
 func main() {
-	control, err := controller.New()
+	control, err := gui.New()
 	if err != nil {
 		fail(err)
 	}

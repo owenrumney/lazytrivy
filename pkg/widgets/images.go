@@ -16,11 +16,11 @@ type ImagesWidget struct {
 	body string
 
 	imageCount int
-	ctx        ctx
+	ctx        vulnerabilityContext
 	v          *gocui.View
 }
 
-func NewImagesWidget(name string, g ctx) *ImagesWidget {
+func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
 	w := 25
 
 	widget := &ImagesWidget{

@@ -15,14 +15,14 @@ type MenuWidget struct {
 	w, h int
 	body []string
 	v    *gocui.View
-	ctx  ctx
+	ctx  vulnerabilityContext
 }
 
 func (w *MenuWidget) RefreshView() {
 	panic("unimplemented")
 }
 
-func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
+func NewMenuWidget(name string, x, y, w, h int, ctx vulnerabilityContext) *MenuWidget {
 	menuItems := []string{
 		"<blue>[enter] or [s]</blue>can", "scan <blue>[a]</blue>ll", "<blue>[r]</blue>emote",
 		"<green>[i]</green>mage refresh", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",

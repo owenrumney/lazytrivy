@@ -15,10 +15,10 @@ type HostWidget struct {
 	w, h int
 	body string
 	v    *gocui.View
-	ctx  ctx
+	ctx  vulnerabilityContext
 }
 
-func NewHostWidget(name string, ctx ctx) *HostWidget {
+func NewHostWidget(name string, ctx vulnerabilityContext) *HostWidget {
 	hostName, err := os.Hostname()
 	if err != nil {
 		hostName = "unknown"

@@ -18,7 +18,7 @@ type SummaryWidget struct {
 	vuln output.Vulnerability
 }
 
-func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output.Vulnerability) (*SummaryWidget, error) {
+func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vulnerability output.Vulnerability) (*SummaryWidget, error) {
 	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if len(view.BufferLines()) > 0 {
 			if image, _ := view.Line(0); image != "" {

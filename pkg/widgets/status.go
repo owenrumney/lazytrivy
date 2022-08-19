@@ -14,10 +14,10 @@ type StatusWidget struct {
 	w, h int
 	body string
 	v    *gocui.View
-	ctx  ctx
+	ctx  vulnerabilityContext
 }
 
-func NewStatusWidget(name string, ctx ctx) *StatusWidget {
+func NewStatusWidget(name string, ctx vulnerabilityContext) *StatusWidget {
 	return &StatusWidget{
 		name: name,
 		x:    0,

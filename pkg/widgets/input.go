@@ -15,7 +15,7 @@ type InputWidget struct {
 	maxLength int
 }
 
-func NewInputWidget(name string, maxX, maxY, maxLength int, ctx ctx) (*InputWidget, error) {
+func NewInputWidget(name string, maxX, maxY, maxLength int, ctx vulnerabilityContext) (*InputWidget, error) {
 	x1 := maxX/2 - 50
 	x2 := maxX/2 + 50
 	y1 := maxY/2 - 1
