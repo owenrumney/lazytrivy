@@ -1,14 +1,17 @@
 package gui
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/owenrumney/lazytrivy/pkg/controllers/aws"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/vulnerabilities"
 	"github.com/owenrumney/lazytrivy/pkg/docker"
+	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
 type Controller struct {
@@ -17,6 +20,9 @@ type Controller struct {
 	dockerClient     *docker.Client
 	controllers      map[string]base.ControllerView
 	activeController base.ControllerView
+	runContext       context.Context
+	runCancel        context.CancelFunc
+	views            []gocui.Manager
 }
 
 func New() (*Controller, error) {
@@ -32,6 +38,7 @@ func New() (*Controller, error) {
 		dockerClient: dockerClient,
 		controllers: map[string]base.ControllerView{
 			"vulnerabilities": vulnerabilities.NewVulnerabilityController(cui, dockerClient),
+			"aws":             aws.NewAWSController(cui, dockerClient),
 		},
 	}
 	mainController.activeController = mainController.controllers["vulnerabilities"]
@@ -44,16 +51,59 @@ func (g *Controller) DockerClient() *docker.Client {
 }
 
 func (g *Controller) CreateWidgets() error {
-	return g.activeController.CreateWidgets()
+	// maxX, _ := g.cui.Size()
+	// tabs := widgets.NewTabWidget("tabs", 0, 0, maxX-1, 2)
+	// tabs.SetActiveTab(g.activeController.Tab())
+	//
+	// g.cui.Update(func(gui *gocui.Gui) error {
+	// 	if err := tabs.Layout(gui); err != nil {
+	// 		return fmt.Errorf("failed to layout remote input: %w", err)
+	// 	}
+	// 	_, err := gui.SetCurrentView("tabs")
+	// 	return err
+	// })
+
+	return g.activeController.CreateWidgets(g)
 }
 
 func (g *Controller) Initialise() error {
+
+	if err := g.cui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, base.Quit); err != nil {
+		return err
+	}
+
+	if err := g.cui.SetKeybinding("", gocui.KeyTab, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+
+		switch g.activeController.Tab() {
+		case widgets.VulnerabilitiesTab:
+			g.activeController = aws.NewAWSController(g.cui, g.dockerClient)
+		case widgets.AWSTab:
+			g.activeController = vulnerabilities.NewVulnerabilityController(g.cui, g.dockerClient)
+		}
+
+		if err := g.CreateWidgets(); err != nil {
+			return err
+		}
+
+		if err := g.activeController.Initialise(); err != nil {
+		}
+
+		g.Initialise()
+		return nil
+	}); err != nil {
+		return fmt.Errorf("error while creating Tabs navigation key binding: %w", err)
+	}
+
 	return g.activeController.Initialise()
 }
 
 func (g *Controller) Run() error {
-	if err := g.cui.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
-		return fmt.Errorf("error occurred during the run main loop: %w", err)
+	for {
+		if err := g.cui.MainLoop(); err != nil {
+			if errors.Is(err, gocui.ErrQuit) {
+				return nil
+			}
+		}
 	}
 	return nil
 }
@@ -83,4 +133,21 @@ func (g *Controller) EnableMouse() {
 
 func (g *Controller) DisableMouse() {
 	g.cui.Mouse = false
+}
+
+func (g *Controller) AddViews(w ...gocui.Manager) {
+	for _, widget := range w {
+		g.views = append(g.views, widget)
+	}
+}
+
+func (g *Controller) RefreshManager() {
+
+	views := make([]gocui.Manager, 0, len(g.views)+1)
+	for _, v := range g.views {
+		views = append(views, v)
+	}
+
+	g.cui.SetManager(views...)
+
 }

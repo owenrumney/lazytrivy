@@ -10,8 +10,9 @@ type Report struct {
 }
 
 type Result struct {
-	Target          string
-	Vulnerabilities []Vulnerability
+	Target            string
+	Vulnerabilities   []Vulnerability
+	Misconfigurations []Misconfiguration
 }
 
 type DataSource struct {
@@ -34,6 +35,29 @@ type Vulnerability struct {
 	FixedVersion     string
 	References       []string
 	CVSS             map[string]interface{}
+}
+
+type Code struct {
+	Lines []string
+}
+
+type CauseMetadata struct {
+	Resource string
+	Provider string
+	Service  string
+	Code     Code
+}
+
+type Misconfiguration struct {
+	Type          string
+	ID            string
+	Title         string
+	Description   string
+	Message       string
+	Resolution    string
+	Severity      string
+	Status        string
+	CauseMetadata CauseMetadata
 }
 
 func FromJSON(imageName string, content string) (*Report, error) {
@@ -82,4 +106,13 @@ func (r *Report) processReport() {
 			r.SeverityCount[v.Severity]++
 		}
 	}
+}
+
+func (r *Result) GetSeverityCounts() map[string]int {
+	severities := make(map[string]int)
+	for _, m := range r.Misconfigurations {
+		severities[m.Severity]++
+	}
+
+	return severities
 }

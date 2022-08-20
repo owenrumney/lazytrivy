@@ -11,33 +11,27 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
-type ResultsMode int
-
-const (
-	SummaryResultMode = iota
-	DetailsResultMode
-)
-
-type ResultsWidget struct {
-	name               string
-	x, y               int
-	w, h               int
-	body               []string
-	v                  *gocui.View
-	ctx                vulnerabilityContext
-	currentReport      *output.Report
-	reports            []*output.Report
-	vulnerabilities    []output.Vulnerability
-	vulnerabilityIndex int
-	mode               ResultsMode
-	imageWidth         int
-	yPos               int
-	yOrigin            int
-	page               int
+type AWSResultWidget struct {
+	name            string
+	x, y            int
+	w, h            int
+	body            []string
+	v               *gocui.View
+	ctx             awsContext
+	currentReport   *output.Report
+	currentResult   *output.Result
+	results         []*output.Result
+	vulnerabilities []output.Misconfiguration
+	resultIndex     int
+	mode            ResultsMode
+	imageWidth      int
+	yPos            int
+	yOrigin         int
+	page            int
 }
 
-func NewResultsWidget(name string, g vulnerabilityContext) *ResultsWidget {
-	widget := &ResultsWidget{
+func NewAWSResultWidget(name string, g awsContext) *AWSResultWidget {
+	widget := &AWSResultWidget{
 		name: name,
 		x:    0,
 		y:    0,
@@ -51,7 +45,7 @@ func NewResultsWidget(name string, g vulnerabilityContext) *ResultsWidget {
 	return widget
 }
 
-func (w *ResultsWidget) ConfigureKeys() error {
+func (w *AWSResultWidget) ConfigureKeys() error {
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.nextResult); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
@@ -69,8 +63,8 @@ func (w *ResultsWidget) ConfigureKeys() error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		if w.reports != nil && len(w.reports) > 0 {
-			w.UpdateResultsTable(w.reports)
+		if w.results != nil && len(w.results) > 0 {
+			w.UpdateResultsTable(w.currentReport)
 		}
 		return nil
 	}); err != nil {
@@ -85,7 +79,7 @@ func (w *ResultsWidget) ConfigureKeys() error {
 	return nil
 }
 
-func (w *ResultsWidget) addFilteringKeyBinding(key rune, severity string) error {
+func (w *AWSResultWidget) addFilteringKeyBinding(key rune, severity string) error {
 	if err := w.ctx.SetKeyBinding(w.name, key, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if w.currentReport == nil {
 			return nil
@@ -106,7 +100,7 @@ func (w *ResultsWidget) addFilteringKeyBinding(key rune, severity string) error 
 	return nil
 }
 
-func (w *ResultsWidget) addFilteringKeyBindings() error {
+func (w *AWSResultWidget) addFilteringKeyBindings() error {
 	if err := w.addFilteringKeyBinding('e', "ALL"); err != nil {
 		return err
 	}
@@ -129,42 +123,42 @@ func (w *ResultsWidget) addFilteringKeyBindings() error {
 	return nil
 }
 
-func (w *ResultsWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
+func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 	switch w.mode {
 	case SummaryResultMode:
 		_, y := w.v.Cursor()
-		w.currentReport = w.reports[y-3]
+		w.currentResult = w.results[y-3]
 		w.GenerateFilteredReport("ALL")
 	case DetailsResultMode:
-		x, y, wi, h := v.Dimensions()
-
-		var vuln output.Vulnerability
-		if w.vulnerabilityIndex >= 0 && w.vulnerabilityIndex < len(w.vulnerabilities) {
-			vuln = w.vulnerabilities[w.vulnerabilityIndex]
-		} else {
-			return nil
-		}
-
-		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, vuln)
-		if err != nil {
-			return err
-		}
-		g.Update(func(g *gocui.Gui) error {
-			if err := summary.Layout(g); err != nil {
-				return fmt.Errorf("failed to layout remote input: %w", err)
-			}
-			_, err := g.SetCurrentView("summary")
-			if err != nil {
-				return fmt.Errorf("failed to set current view: %w", err)
-			}
-			return nil
-		})
+		// x, y, wi, h := v.Dimensions()
+		//
+		// var result *output.Result
+		// if w.resultIndex >= 0 && w.resultIndex < len(w.results) {
+		// 	result = w.results[w.resultIndex]
+		// } else {
+		// 	return nil
+		// }
+		//
+		// summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, result)
+		// if err != nil {
+		// 	return err
+		// }
+		// g.Update(func(g *gocui.Gui) error {
+		// 	if err := summary.Layout(g); err != nil {
+		// 		return fmt.Errorf("failed to layout remote input: %w", err)
+		// 	}
+		// 	_, err := g.SetCurrentView("summary")
+		// 	if err != nil {
+		// 		return fmt.Errorf("failed to set current view: %w", err)
+		// 	}
+		// 	return nil
+		// })
 	}
 
 	return nil
 }
 
-func (w *ResultsWidget) previousResult(_ *gocui.Gui, v *gocui.View) error {
+func (w *AWSResultWidget) previousResult(_ *gocui.Gui, v *gocui.View) error {
 	for {
 		if w.yPos+w.yOrigin > 3 {
 			v.MoveCursor(0, -1)
@@ -193,11 +187,11 @@ func (w *ResultsWidget) previousResult(_ *gocui.Gui, v *gocui.View) error {
 	} else {
 		_, w.yPos = v.Cursor()
 	}
-	w.vulnerabilityIndex--
+	w.resultIndex--
 	return nil
 }
 
-func (w *ResultsWidget) nextResult(_ *gocui.Gui, v *gocui.View) error {
+func (w *AWSResultWidget) nextResult(_ *gocui.Gui, v *gocui.View) error {
 	_, lastY := v.Cursor()
 	for {
 		v.MoveCursor(0, 1)
@@ -227,12 +221,12 @@ func (w *ResultsWidget) nextResult(_ *gocui.Gui, v *gocui.View) error {
 		}
 	}
 
-	w.vulnerabilityIndex++
+	w.resultIndex++
 
 	return nil
 }
 
-func (w *ResultsWidget) Layout(g *gocui.Gui) error {
+func (w *AWSResultWidget) Layout(g *gocui.Gui) error {
 	v, err := g.View(w.name)
 	if err != nil {
 		v, err = g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
@@ -267,7 +261,7 @@ func (w *ResultsWidget) Layout(g *gocui.Gui) error {
 			printer := fmt.Sprintf("%s%s", truncated, strings.Repeat(" ", width-unencodedLength))
 			_, _ = fmt.Fprintln(v, printer)
 		case SummaryResultMode:
-			_, _ = fmt.Fprintln(v, line)
+			_, _ = fmt.Fprintln(v, strings.ReplaceAll(line, "934027998561", "124334523523"))
 		}
 	}
 
@@ -277,7 +271,7 @@ func (w *ResultsWidget) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (w *ResultsWidget) Reset() {
+func (w *AWSResultWidget) Reset() {
 	w.v.Clear()
 	w.v.Title = " Results "
 
@@ -287,9 +281,9 @@ func (w *ResultsWidget) Reset() {
 	}
 }
 
-func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report) {
+func (w *AWSResultWidget) UpdateResultsTable(report *output.Report) {
 	w.mode = SummaryResultMode
-	w.reports = reports
+	w.currentReport = report
 
 	width, _ := w.v.Size()
 	imageWidth := width - 50
@@ -297,7 +291,7 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report) {
 	var bodyContent []string //nolint:prealloc
 
 	headers := []string{
-		fmt.Sprintf("\n Image% *s", width-55, ""),
+		fmt.Sprintf("\n ARN% *s", width-55, ""),
 		"   Critical",
 		"   High",
 		"   Medium",
@@ -308,16 +302,19 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report) {
 	bodyContent = append(bodyContent, strings.Join(headers, ""))
 	bodyContent = append(bodyContent, strings.Repeat("─", width))
 
-	for _, report := range reports {
+	for _, result := range report.Results {
+		severities := result.GetSeverityCounts()
+
 		row := []string{
-			fmt.Sprintf(" % -*s", width-50, report.ImageName),
-			tml.Sprintf("<bold><red>% 11d</red></bold>", report.SeverityCount["CRITICAL"]),
-			tml.Sprintf("<red>% 7d</red>", report.SeverityCount["HIGH"]),
-			tml.Sprintf("<yellow>% 9d</yellow>", report.SeverityCount["MEDIUM"]),
-			tml.Sprintf("% 6d", report.SeverityCount["LOW"]),
-			tml.Sprintf("% 10d ", report.SeverityCount["UNKNOWN"]),
+			fmt.Sprintf(" % -*s", width-50, result.Target),
+			tml.Sprintf("<bold><red>% 11d</red></bold>", severities["CRITICAL"]),
+			tml.Sprintf("<red>% 7d</red>", severities["HIGH"]),
+			tml.Sprintf("<yellow>% 9d</yellow>", severities["MEDIUM"]),
+			tml.Sprintf("% 6d", severities["LOW"]),
+			tml.Sprintf("% 10d ", severities["UNKNOWN"]),
 		}
 		bodyContent = append(bodyContent, strings.Join(row, ""))
+		w.results = append(w.results, result)
 	}
 
 	w.body = bodyContent
@@ -329,27 +326,29 @@ func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report) {
 	w.v.Subtitle = ""
 }
 
-func (w *ResultsWidget) RenderReport(report *output.Report, severity string) {
+func (w *AWSResultWidget) RenderReport(report *output.Report, severity string) {
 	w.currentReport = report
 
 	w.GenerateFilteredReport(severity)
 }
 
-func (w *ResultsWidget) GenerateFilteredReport(severity string) {
-	if w.currentReport == nil {
+func (w *AWSResultWidget) GenerateFilteredReport(severity string) {
+	if w.currentResult == nil || len(w.currentResult.Misconfigurations) == 0 {
 		return
 	}
-	w.mode = DetailsResultMode
-	w.vulnerabilities = []output.Vulnerability{}
+
+	w.mode = SummaryResultMode
+	w.vulnerabilities = []output.Misconfiguration{}
 
 	var severities []string
-	if w.reports != nil && len(w.reports) > 0 {
+	if w.results != nil && len(w.results) > 0 {
 		severities = append(severities, "[B]ack")
 	}
 	severities = append(severities, "[E]verything")
+	resultSevs := w.currentResult.GetSeverityCounts()
 
 	for _, sev := range []string{"CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"} {
-		if count, ok := w.currentReport.SeverityCount[sev]; ok {
+		if count, ok := resultSevs[sev]; ok {
 			if count == 0 {
 				continue
 			}
@@ -357,34 +356,22 @@ func (w *ResultsWidget) GenerateFilteredReport(severity string) {
 		}
 	}
 
-	var results []*output.Result
-	if severity != "ALL" {
-		results = w.currentReport.SeverityMap[severity]
-	} else {
-		results = w.currentReport.Results
-	}
+	bodyContent := []string{""} //nolint:prealloc
 
-	var bodyContent []string //nolint:prealloc
+	misconfigurations := w.currentResult.Misconfigurations
 
-	for _, result := range results {
-		if len(result.Vulnerabilities) == 0 {
-			continue
-		}
+	sort.Slice(misconfigurations, func(i, j int) bool {
+		return severityAsInt(misconfigurations[i].Severity) < severityAsInt(misconfigurations[j].Severity) //nolint:scopelint
+	})
 
-		bodyContent = append(bodyContent, tml.Sprintf("\n  <bold>Target:</bold> <blue>%s</blue>\n", result.Target))
+	for _, misconfig := range misconfigurations {
 
-		sort.Slice(result.Vulnerabilities, func(i, j int) bool {
-			return severityAsInt(result.Vulnerabilities[i].Severity) < severityAsInt(result.Vulnerabilities[j].Severity) //nolint:scopelint
-		})
+		f, b := colouredSeverity(misconfig.Severity)
+		toPrint := fmt.Sprintf("  %s % -16s %s", tml.Sprintf(f+"% -10s"+b, misconfig.Severity),
+			misconfig.ID, misconfig.Title)
 
-		for _, v := range result.Vulnerabilities {
-			f, b := colouredSeverity(v.Severity)
-			toPrint := fmt.Sprintf("  %s % -16s %s", tml.Sprintf(f+"% -10s"+b, v.Severity),
-				v.VulnerabilityID, v.Title)
-
-			bodyContent = append(bodyContent, toPrint)
-			w.vulnerabilities = append(w.vulnerabilities, v)
-		}
+		bodyContent = append(bodyContent, toPrint)
+		w.vulnerabilities = append(w.vulnerabilities, misconfig)
 	}
 
 	w.body = bodyContent
@@ -393,13 +380,45 @@ func (w *ResultsWidget) GenerateFilteredReport(severity string) {
 	w.page = 0
 	w.yPos = 3
 	w.yOrigin = 0
-	w.vulnerabilityIndex = 0
+	w.resultIndex = 0
 	w.v.Subtitle = fmt.Sprintf(" %s ", strings.Join(severities, " | "))
 }
 
-func (w *ResultsWidget) RefreshView() {
+func severityAsInt(severity string) int {
+	switch severity {
+	case "CRITICAL":
+		return 0
+	case "HIGH":
+		return 1
+	case "MEDIUM":
+		return 2
+	case "LOW":
+		return 3
+	case "UNKNOWN":
+		return 5
+	default:
+		return -1
+	}
 }
 
-func (w *ResultsWidget) CurrentReport() *output.Report {
+func colouredSeverity(severity string) (string, string) {
+	switch severity {
+	case "CRITICAL":
+		return "<bold><red>", "</red></bold>"
+	case "HIGH":
+		return "<red>", "</red>"
+	case "MEDIUM":
+		return "<yellow>", "</yellow>"
+	case "LOW":
+		return "<blue>", "</blue>"
+	default:
+		return "", ""
+	}
+}
+
+func (w *AWSResultWidget) RefreshView() {
+}
+
+func (w *AWSResultWidget) CurrentReport() *output.Report {
 	return w.currentReport
 }

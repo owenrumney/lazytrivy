@@ -8,7 +8,7 @@ import (
 	"github.com/liamg/tml"
 )
 
-type StatusWidget struct {
+type AccountWidget struct {
 	name string
 	x, y int
 	w, h int
@@ -16,42 +16,38 @@ type StatusWidget struct {
 	v    *gocui.View
 }
 
-func NewStatusWidget(name string) *StatusWidget {
-	return &StatusWidget{
+func NewAccountWidget(name string) *AccountWidget {
+	accountNumber := "124334523523"
+	return &AccountWidget{
 		name: name,
-		x:    0,
+		x:    1,
 		y:    0,
 		w:    5,
 		h:    1,
-		body: "",
-		v:    nil,
+		body: accountNumber,
 	}
 }
 
-func (w *StatusWidget) ConfigureKeys() error {
+func (w *AccountWidget) ConfigureKeys() error {
 	// nothing to configure here
 	return nil
 }
 
-func (w *StatusWidget) Layout(g *gocui.Gui) error {
+func (w *AccountWidget) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
-		_, _ = fmt.Fprintf(v, " %s", w.body)
+		_ = tml.Fprintf(v, " <blue>%s</blue>", w.body)
 	}
 
-	v.Title = " Status "
+	v.Title = " AWS Account "
 	w.v = v
 	return nil
 }
 
-func (w *StatusWidget) UpdateStatus(status string) {
-	w.body = status
-}
-
-func (w *StatusWidget) RefreshView() {
+func (w *AccountWidget) RefreshView() {
 	w.v.Clear()
-	_ = tml.Fprintf(w.v, " <blue>%s</blue>", w.body)
+	_, _ = fmt.Fprintf(w.v, w.body)
 }

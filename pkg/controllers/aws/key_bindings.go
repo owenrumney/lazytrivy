@@ -1,7 +1,6 @@
-package vulnerabilities
+package aws
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/awesome-gocui/gocui"
@@ -10,7 +9,6 @@ import (
 )
 
 func (c *Controller) configureKeyBindings() error {
-
 	if err := c.ConfigureGlobalKeyBindings(); err != nil {
 		return fmt.Errorf("error configuring global keybindings: %w", err)
 	}
@@ -23,23 +21,6 @@ func (c *Controller) configureKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for cancelling current scan: %w", err)
 	}
 
-	if err := c.Cui.SetKeybinding("", 'a', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		c.ScanAllImages(context.Background())
-		return nil
-	}); err != nil {
-		return fmt.Errorf("error setting keybinding for scanning all images: %w", err)
-	}
-
-	if err := c.Cui.SetKeybinding("", 'r', gocui.ModNone, c.scanRemote); err != nil {
-		return fmt.Errorf("error setting keybinding for scanning remote: %w", err)
-	}
-
-	if err := c.Cui.SetKeybinding("", 'i', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		return c.RefreshImages()
-	}); err != nil {
-		return fmt.Errorf("error setting keybinding for refreshing images: %w", err)
-	}
-
 	if err := c.Cui.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if c.Cui.CurrentView().Name() == widgets.Results {
 			_, err := c.Cui.SetCurrentView(widgets.Images)
@@ -47,7 +28,7 @@ func (c *Controller) configureKeyBindings() error {
 				return fmt.Errorf("error getting the images view: %w", err)
 			}
 			if v, ok := c.Views[widgets.Images].(*widgets.ImagesWidget); ok {
-				return v.SetSelectedImage(c.state.selectedImage)
+				return v.SetSelectedImage(c.state.selectedService)
 			}
 		}
 		return nil

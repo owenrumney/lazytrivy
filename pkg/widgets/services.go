@@ -9,21 +9,21 @@ import (
 	"github.com/awesome-gocui/gocui"
 )
 
-type ImagesWidget struct {
+type ServicesWidget struct {
 	name string
 	x, y int
 	w, h int
 	body string
 
 	imageCount int
-	ctx        vulnerabilityContext
+	ctx        awsContext
 	v          *gocui.View
 }
 
-func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
+func NewServicesWidget(name string, g awsContext) *ServicesWidget {
 	w := 25
 
-	widget := &ImagesWidget{
+	widget := &ServicesWidget{
 		name: name,
 		x:    0,
 		y:    0,
@@ -35,25 +35,25 @@ func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
 	return widget
 }
 
-func (w *ImagesWidget) ConfigureKeys() error {
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.PreviousImage); err != nil {
+func (w *ServicesWidget) ConfigureKeys() error {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.PreviousItem); err != nil {
 		return fmt.Errorf("failed to set the previous image %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.NextImage); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.NextItem); err != nil {
 		return fmt.Errorf("failed to set the next image %w", err)
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		w.ctx.ScanImage(context.Background(), w.SelectedImage())
+		w.ctx.ScanService(context.Background(), w.SelectedService())
 		return nil
 	}); err != nil {
 		return fmt.Errorf("error setting keybinding for scanning image: %w", err)
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if image := w.SelectedImage(); image != "" {
-			w.ctx.ScanImage(context.Background(), image)
+		if image := w.SelectedService(); image != "" {
+			w.ctx.ScanService(context.Background(), image)
 		}
 
 		return nil
@@ -64,7 +64,7 @@ func (w *ImagesWidget) ConfigureKeys() error {
 	return nil
 }
 
-func (w *ImagesWidget) Layout(g *gocui.Gui) error {
+func (w *ServicesWidget) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -72,7 +72,7 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 		}
 		_, _ = fmt.Fprint(v, w.body)
 	}
-	v.Title = " Images "
+	v.Title = " Services "
 	v.Highlight = true
 	v.Autoscroll = true
 	v.Highlight = true
@@ -88,43 +88,43 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, _ *gocui.View) error {
+func (w *ServicesWidget) PreviousItem(_ *gocui.Gui, _ *gocui.View) error {
 	w.v.MoveCursor(0, -1)
 
 	_, y := w.v.Cursor()
-	if image, err := w.v.Line(y); err == nil {
-		w.ctx.SetSelected(image)
+	if selected, err := w.v.Line(y); err == nil {
+		w.ctx.SetSelected(selected)
 	}
 	return nil
 }
 
-func (w *ImagesWidget) NextImage(_ *gocui.Gui, _ *gocui.View) error {
+func (w *ServicesWidget) NextItem(_ *gocui.Gui, _ *gocui.View) error {
 	w.v.MoveCursor(0, 1)
 
 	_, y := w.v.Cursor()
-	if image, err := w.v.Line(y); err == nil {
-		w.ctx.SetSelected(image)
+	if selected, err := w.v.Line(y); err == nil {
+		w.ctx.SetSelected(selected)
 	}
 	return nil
 }
 
-func (w *ImagesWidget) RefreshImages(images []string, imageWidth int) error {
-	w.w = imageWidth + 4
+func (w *ServicesWidget) RefreshServices(services []string, serviceWidth int) error {
+	w.w = serviceWidth + 4
 
-	imageList := make([]string, len(images))
-	for i, image := range images {
-		imageList[i] = fmt.Sprintf(" % -*s", imageWidth+1, image)
+	serviceList := make([]string, len(services))
+	for i, service := range services {
+		serviceList[i] = fmt.Sprintf(" % -*s", serviceWidth+1, service)
 	}
 
-	w.imageCount = len(imageList)
-	w.body = strings.Join(imageList, "\n")
+	w.imageCount = len(serviceList)
+	w.body = strings.Join(serviceList, "\n")
 	w.v.Clear()
 	_, _ = fmt.Fprintf(w.v, w.body)
 	_ = w.v.SetCursor(0, 0)
 	return nil
 }
 
-func (w *ImagesWidget) SetSelectedImage(image string) error {
+func (w *ServicesWidget) SetSelectedImage(image string) error {
 	for i, line := range strings.Split(w.body, "\n") {
 		if strings.TrimSpace(line) == image {
 			y := i + 1
@@ -137,15 +137,15 @@ func (w *ImagesWidget) SetSelectedImage(image string) error {
 	return nil
 }
 
-func (w *ImagesWidget) SelectedImage() string {
+func (w *ServicesWidget) SelectedService() string {
 	_, y := w.v.Cursor()
-	if image, err := w.v.Line(y); err == nil {
-		return strings.TrimSpace(image)
+	if service, err := w.v.Line(y); err == nil {
+		return strings.TrimSpace(service)
 	}
 	return ""
 }
 
-func (w *ImagesWidget) RefreshView() {
+func (w *ServicesWidget) RefreshView() {
 	w.v.Clear()
 	_, _ = fmt.Fprintf(w.v, w.body)
 }

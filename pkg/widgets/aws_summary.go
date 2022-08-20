@@ -11,14 +11,14 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
-type SummaryWidget struct {
+type AWSSummaryWidget struct {
 	name string
 	x, y int
 	w, h int
 	vuln output.Vulnerability
 }
 
-func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vulnerability output.Vulnerability) (*SummaryWidget, error) {
+func NewAWSSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vulnerability output.Vulnerability) (*AWSSummaryWidget, error) {
 	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if len(view.BufferLines()) > 0 {
 			if image, _ := view.Line(0); image != "" {
@@ -82,10 +82,10 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vul
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	return &SummaryWidget{name: name, x: x, y: y, w: w, h: h, vuln: vulnerability}, nil
+	return &AWSSummaryWidget{name: name, x: x, y: y, w: w, h: h, vuln: vulnerability}, nil
 }
 
-func (i *SummaryWidget) Layout(g *gocui.Gui) error {
+func (i *AWSSummaryWidget) Layout(g *gocui.Gui) error {
 	vulnerability := i.vuln
 	var lines []string
 
@@ -137,49 +137,4 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 	v.TitleColor = gocui.ColorGreen
 	v.FrameColor = gocui.ColorGreen
 	return nil
-}
-
-func printSingleLine(source string, heading string, lines []string) []string {
-	if source != "" {
-		lines = append(lines, tml.Sprintf("<green> %s:</green>\n   %s\n", heading, source))
-	}
-	return lines
-}
-
-func printMultiline(source string, heading string, lines []string, maxLength int) []string {
-	if source != "" {
-		titleLines := prettyLines(source, maxLength)
-		first := true
-		for _, line := range titleLines {
-			if first {
-				lines = append(lines, tml.Sprintf("\n<green> %s:</green>\n   %s", heading, line))
-				first = false
-			} else {
-				lines = append(lines, tml.Sprintf("  %s", line))
-			}
-		}
-		lines = append(lines, "")
-	}
-	return lines
-}
-
-func prettyLines(input string, maxLength int) []string {
-	var lines []string
-	words := strings.Split(input, " ")
-
-	line := ""
-
-	for _, w := range words {
-		if len(line)+len(w)+1 < maxLength {
-			line += w + " "
-		} else {
-			lines = append(lines, line)
-			line = w + " "
-		}
-	}
-	if len(lines) == 0 && line != "" {
-		lines = append(lines, line)
-	}
-
-	return lines
 }

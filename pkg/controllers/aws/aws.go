@@ -1,7 +1,9 @@
-package vulnerabilities
+package aws
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
@@ -14,15 +16,23 @@ type Controller struct {
 	*state
 }
 
-func NewVulnerabilityController(cui *gocui.Gui, dockerClient *docker.Client) *Controller {
+func NewAWSController(cui *gocui.Gui, dockerClient *docker.Client) *Controller {
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		homeDir = "/tmp"
+	}
+
 	return &Controller{
 		&base.Controller{
 			Cui:          cui,
 			DockerClient: dockerClient,
 			Views:        make(map[string]widgets.Widget),
-			LayoutFunc:   vulnerabilityLayout,
+			LayoutFunc:   layout,
 		},
-		&state{},
+		&state{
+			cacheDirectory: filepath.Join(homeDir, ".cache", "trivy", "cloud", "aws"),
+		},
 	}
 }
 
@@ -30,8 +40,19 @@ func (c *Controller) Initialise() error {
 	var outerErr error
 
 	c.Cui.Update(func(gui *gocui.Gui) error {
-		if err := c.RefreshImages(); err != nil {
+
+		accountNumber := "934027998561"
+		region := "us-east-1"
+
+		services, err := c.accountRegionCacheServices(accountNumber, region)
+		if err != nil {
 			return err
+		}
+
+		if v, ok := c.Views[widgets.Services].(*widgets.ServicesWidget); ok {
+			if err := v.RefreshServices(services, 20); err != nil {
+				return err
+			}
 		}
 
 		if err := c.configureKeyBindings(); err != nil {
@@ -44,7 +65,7 @@ func (c *Controller) Initialise() error {
 			}
 		}
 
-		_, err := gui.SetCurrentView(widgets.Images)
+		_, err = gui.SetCurrentView(widgets.Services)
 		if err != nil {
 			outerErr = fmt.Errorf("failed to set current view: %w", err)
 		}
@@ -56,17 +77,16 @@ func (c *Controller) Initialise() error {
 
 func (c *Controller) CreateWidgets(manager base.Manager) error {
 	menuItems := []string{
-		"<blue>[enter] or [s]</blue>can", "scan <blue>[a]</blue>ll", "<blue>[r]</blue>emote",
-		"<green>[i]</green>mage refresh", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
+		"<blue>[u]</blue>pdate cache", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
 		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
 	}
 
 	maxX, maxY := c.Cui.Size()
-	c.Views[widgets.Images] = widgets.NewImagesWidget(widgets.Images, c)
-	c.Views[widgets.Results] = widgets.NewResultsWidget(widgets.Results, c)
+	c.Views[widgets.Services] = widgets.NewServicesWidget(widgets.Services, c)
+	c.Views[widgets.Results] = widgets.NewAWSResultWidget(widgets.Results, c)
 	c.Views[widgets.Menu] = widgets.NewMenuWidget(widgets.Menu, 0, maxY-3, maxX-1, maxY-1, menuItems)
 	c.Views[widgets.Status] = widgets.NewStatusWidget(widgets.Status)
-	c.Views[widgets.Host] = widgets.NewHostWidget(widgets.Host, c)
+	c.Views[widgets.Account] = widgets.NewAccountWidget(widgets.Account)
 
 	for _, v := range c.Views {
 		manager.AddViews(v)
@@ -86,5 +106,5 @@ func (c *Controller) SetKeyBinding(viewName string, key interface{}, mod gocui.M
 }
 
 func (c *Controller) Tab() widgets.Tab {
-	return widgets.VulnerabilitiesTab
+	return widgets.AWSTab
 }

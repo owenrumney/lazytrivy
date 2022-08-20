@@ -18,13 +18,15 @@ type Controller struct {
 	DockerClient *docker.Client
 	Views        map[string]widgets.Widget
 	LayoutFunc   func(g *gocui.Gui) error
+	Tab          widgets.Tab
 
 	ActiveCancel context.CancelFunc
 }
 
 type ControllerView interface {
-	CreateWidgets() error
+	CreateWidgets(manager Manager) error
 	Initialise() error
+	Tab() widgets.Tab
 }
 
 func (g *Controller) SetManager() {
@@ -61,6 +63,28 @@ func (g *Controller) RenderResultsReport(report *output.Report) error {
 		}
 	}
 	return nil
+}
+
+func (g *Controller) RenderAWSResultsReport(report *output.Report) error {
+	if v, ok := g.Views[widgets.Results].(*widgets.AWSResultWidget); ok {
+		v.RenderReport(report, "ALL")
+		_, err := g.Cui.SetCurrentView(widgets.Results)
+		if err != nil {
+			return fmt.Errorf("failed to set current view: %w", err)
+		}
+	}
+	return nil
+}
+
+func (g *Controller) RenderAWSResultsReportSummary(report *output.Report) error {
+	if v, ok := g.Views[widgets.Results].(*widgets.AWSResultWidget); ok {
+		v.UpdateResultsTable(report)
+		_, err := g.Cui.SetCurrentView(widgets.Results)
+		if err != nil {
+			return fmt.Errorf("error setting current view: %w", err)
+		}
+	}
+	return errors.New("failed to render results report summary") //nolint:goerr113
 }
 
 func (g *Controller) RenderResultsReportSummary(reports []*output.Report) error {
