@@ -23,6 +23,7 @@ func NewAWSController(cui *gocui.Gui, dockerClient *docker.Client, cfg *config.C
 			DockerClient: dockerClient,
 			Views:        make(map[string]widgets.Widget),
 			LayoutFunc:   layout,
+			HelpFunc:     help,
 			Config:       cfg,
 		},
 		&state{
@@ -69,7 +70,7 @@ func (c *Controller) Initialise() error {
 
 func (c *Controller) CreateWidgets(manager base.Manager) error {
 	menuItems := []string{
-		"<blue>[u]</blue>pdate cache", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
+		"<blue>[?]</blue> help", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
 		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
 	}
 

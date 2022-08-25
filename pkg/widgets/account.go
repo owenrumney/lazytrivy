@@ -43,7 +43,7 @@ func (w *AccountWidget) Layout(g *gocui.Gui) error {
 		_ = tml.Fprintf(v, " <blue>%s</blue>", w.body)
 	}
 
-	v.Title = " AWS Account "
+	v.Title = " Account (Region) "
 	w.v = v
 	return nil
 }

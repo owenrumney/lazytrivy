@@ -19,6 +19,7 @@ type Controller struct {
 	DockerClient *docker.Client
 	Views        map[string]widgets.Widget
 	LayoutFunc   func(g *gocui.Gui) error
+	HelpFunc     func(g *gocui.Gui, v *gocui.View) error
 	Tab          widgets.Tab
 	Config       *config.Config
 

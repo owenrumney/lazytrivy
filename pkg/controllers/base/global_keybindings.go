@@ -16,5 +16,9 @@ func (c *Controller) ConfigureGlobalKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for quitting: %w", err)
 	}
 
+	if err := c.Cui.SetKeybinding("", '?', gocui.ModNone, c.HelpFunc); err != nil {
+		return fmt.Errorf("error setting keybinding for help: %w", err)
+	}
+
 	return nil
 }
