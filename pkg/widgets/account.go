@@ -16,15 +16,16 @@ type AccountWidget struct {
 	v    *gocui.View
 }
 
-func NewAccountWidget(name string) *AccountWidget {
-	accountNumber := "124334523523"
+func NewAccountWidget(name, accountNumber, region string) *AccountWidget {
+	accountRegion := fmt.Sprintf("%s (%s)", accountNumber, region)
+
 	return &AccountWidget{
 		name: name,
 		x:    1,
 		y:    0,
 		w:    5,
 		h:    1,
-		body: accountNumber,
+		body: accountRegion,
 	}
 }
 
@@ -48,6 +49,11 @@ func (w *AccountWidget) Layout(g *gocui.Gui) error {
 }
 
 func (w *AccountWidget) RefreshView() {
+	w.v.Clear()
+	_, _ = fmt.Fprintf(w.v, w.body)
+}
+
+func (w *AccountWidget) UpdateAccount() {
 	w.v.Clear()
 	_, _ = fmt.Fprintf(w.v, w.body)
 }

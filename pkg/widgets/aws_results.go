@@ -260,8 +260,7 @@ func (w *AWSResultWidget) Layout(g *gocui.Gui) error {
 			truncated, unencodedLength := truncateANSIString(line, width-1)
 			printer := fmt.Sprintf("%s%s", truncated, strings.Repeat(" ", width-unencodedLength))
 			_, _ = fmt.Fprintln(v, printer)
-		case SummaryResultMode:
-			_, _ = fmt.Fprintln(v, strings.ReplaceAll(line, "934027998561", "124334523523"))
+
 		}
 	}
 

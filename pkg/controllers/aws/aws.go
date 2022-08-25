@@ -2,10 +2,9 @@ package aws
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
 	"github.com/owenrumney/lazytrivy/pkg/docker"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
@@ -16,12 +15,7 @@ type Controller struct {
 	*state
 }
 
-func NewAWSController(cui *gocui.Gui, dockerClient *docker.Client) *Controller {
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		homeDir = "/tmp"
-	}
+func NewAWSController(cui *gocui.Gui, dockerClient *docker.Client, cfg *config.Config) *Controller {
 
 	return &Controller{
 		&base.Controller{
@@ -29,9 +23,10 @@ func NewAWSController(cui *gocui.Gui, dockerClient *docker.Client) *Controller {
 			DockerClient: dockerClient,
 			Views:        make(map[string]widgets.Widget),
 			LayoutFunc:   layout,
+			Config:       cfg,
 		},
 		&state{
-			cacheDirectory: filepath.Join(homeDir, ".cache", "trivy", "cloud", "aws"),
+			cacheDirectory: cfg.AWS.CacheDirectory,
 		},
 	}
 }
@@ -41,10 +36,7 @@ func (c *Controller) Initialise() error {
 
 	c.Cui.Update(func(gui *gocui.Gui) error {
 
-		accountNumber := "934027998561"
-		region := "us-east-1"
-
-		services, err := c.accountRegionCacheServices(accountNumber, region)
+		services, err := c.accountRegionCacheServices(c.Config.AWS.AccountNo, c.Config.AWS.Region)
 		if err != nil {
 			return err
 		}
@@ -86,7 +78,7 @@ func (c *Controller) CreateWidgets(manager base.Manager) error {
 	c.Views[widgets.Results] = widgets.NewAWSResultWidget(widgets.Results, c)
 	c.Views[widgets.Menu] = widgets.NewMenuWidget(widgets.Menu, 0, maxY-3, maxX-1, maxY-1, menuItems)
 	c.Views[widgets.Status] = widgets.NewStatusWidget(widgets.Status)
-	c.Views[widgets.Account] = widgets.NewAccountWidget(widgets.Account)
+	c.Views[widgets.Account] = widgets.NewAccountWidget(widgets.Account, c.Config.AWS.AccountNo, c.Config.AWS.Region)
 
 	for _, v := range c.Views {
 		manager.AddViews(v)

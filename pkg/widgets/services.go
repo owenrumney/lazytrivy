@@ -21,7 +21,7 @@ type ServicesWidget struct {
 }
 
 func NewServicesWidget(name string, g awsContext) *ServicesWidget {
-	w := 25
+	w := 28
 
 	widget := &ServicesWidget{
 		name: name,
@@ -109,7 +109,7 @@ func (w *ServicesWidget) NextItem(_ *gocui.Gui, _ *gocui.View) error {
 }
 
 func (w *ServicesWidget) RefreshServices(services []string, serviceWidth int) error {
-	w.w = serviceWidth + 4
+	// w.w = serviceWidth + 4
 
 	serviceList := make([]string, len(services))
 	for i, service := range services {

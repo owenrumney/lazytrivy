@@ -1,12 +1,13 @@
 package gui
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/awesome-gocui/gocui"
+
+	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/aws"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/vulnerabilities"
@@ -18,11 +19,11 @@ type Controller struct {
 	sync.Mutex
 	cui              *gocui.Gui
 	dockerClient     *docker.Client
-	controllers      map[string]base.ControllerView
 	activeController base.ControllerView
-	runContext       context.Context
-	runCancel        context.CancelFunc
-	views            []gocui.Manager
+	// runContext       context.Context
+	// runCancel        context.CancelFunc
+	views  []gocui.Manager
+	config *config.Config
 }
 
 func New() (*Controller, error) {
@@ -33,15 +34,18 @@ func New() (*Controller, error) {
 
 	dockerClient := docker.NewClient()
 
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, err
+	}
+
 	mainController := &Controller{
 		cui:          cui,
 		dockerClient: dockerClient,
-		controllers: map[string]base.ControllerView{
-			"vulnerabilities": vulnerabilities.NewVulnerabilityController(cui, dockerClient),
-			"aws":             aws.NewAWSController(cui, dockerClient),
-		},
+
+		config: cfg,
 	}
-	mainController.activeController = mainController.controllers["vulnerabilities"]
+	mainController.activeController = vulnerabilities.NewVulnerabilityController(cui, dockerClient, cfg)
 
 	return mainController, nil
 }
@@ -76,9 +80,9 @@ func (g *Controller) Initialise() error {
 
 		switch g.activeController.Tab() {
 		case widgets.VulnerabilitiesTab:
-			g.activeController = aws.NewAWSController(g.cui, g.dockerClient)
+			g.activeController = aws.NewAWSController(g.cui, g.dockerClient, g.config)
 		case widgets.AWSTab:
-			g.activeController = vulnerabilities.NewVulnerabilityController(g.cui, g.dockerClient)
+			g.activeController = vulnerabilities.NewVulnerabilityController(g.cui, g.dockerClient, g.config)
 		}
 
 		if err := g.CreateWidgets(); err != nil {
@@ -86,6 +90,7 @@ func (g *Controller) Initialise() error {
 		}
 
 		if err := g.activeController.Initialise(); err != nil {
+			return err
 		}
 
 		g.Initialise()
@@ -105,7 +110,6 @@ func (g *Controller) Run() error {
 			}
 		}
 	}
-	return nil
 }
 
 func (g *Controller) SetKeyBinding(viewName string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) error {
@@ -136,17 +140,13 @@ func (g *Controller) DisableMouse() {
 }
 
 func (g *Controller) AddViews(w ...gocui.Manager) {
-	for _, widget := range w {
-		g.views = append(g.views, widget)
-	}
+	g.views = append(g.views, w...)
 }
 
 func (g *Controller) RefreshManager() {
 
 	views := make([]gocui.Manager, 0, len(g.views)+1)
-	for _, v := range g.views {
-		views = append(views, v)
-	}
+	views = append(views, g.views...)
 
 	g.cui.SetManager(views...)
 

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/docker"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
@@ -19,6 +20,7 @@ type Controller struct {
 	Views        map[string]widgets.Widget
 	LayoutFunc   func(g *gocui.Gui) error
 	Tab          widgets.Tab
+	Config       *config.Config
 
 	ActiveCancel context.CancelFunc
 }

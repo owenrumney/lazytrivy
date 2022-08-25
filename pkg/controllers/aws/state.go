@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -17,6 +18,33 @@ type state struct {
 func (s *state) accountRegionCache(accountID, region string) string {
 	cacheDir := filepath.Join(s.cacheDirectory, accountID, region, "data")
 	return cacheDir
+}
+
+func (s *state) listAccountNumbers() ([]string, error) {
+	var accountNumbers []string
+	fileInfos, err := ioutil.ReadDir(s.cacheDirectory)
+	if err != nil {
+		return nil, err
+	}
+	for _, fileInfo := range fileInfos {
+		if fileInfo.IsDir() {
+			accountNumbers = append(accountNumbers, fileInfo.Name())
+		}
+	}
+	return accountNumbers, nil
+}
+
+func (s *state) listRegions(accountNumber string) ([]string, error) {
+	var regions []string
+	accountPath := filepath.Join(s.cacheDirectory, accountNumber)
+	fileInfos, err := ioutil.ReadDir(accountPath)
+	if err != nil {
+		return nil, err
+	}
+	for _, fileInfo := range fileInfos {
+		regions = append(regions, fileInfo.Name())
+	}
+	return regions, nil
 }
 
 func (s *state) accountRegionCacheExists(accountID, region string) bool {
