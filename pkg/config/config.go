@@ -10,6 +10,7 @@ import (
 type Config struct {
 	AWS            AWSConfig
 	CacheDirectory string
+	Debug          bool
 }
 
 type AWSConfig struct {
@@ -33,6 +34,7 @@ func init() {
 
 	defaultConfig = &Config{
 		CacheDirectory: trivyCacheDir,
+		Debug:          true,
 		AWS: AWSConfig{
 			CacheDirectory: awsCacheDir,
 		},
@@ -78,4 +80,8 @@ func Save(config *Config) error {
 	}
 
 	return nil
+}
+
+func (c *Config) Save() error {
+	return Save(c)
 }

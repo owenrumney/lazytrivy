@@ -1,12 +1,10 @@
 package vulnerabilities
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/awesome-gocui/gocui"
 	base2 "github.com/owenrumney/lazytrivy/pkg/controllers/base"
-	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
 func (c *Controller) configureKeyBindings() error {
@@ -23,10 +21,7 @@ func (c *Controller) configureKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for cancelling current scan: %w", err)
 	}
 
-	if err := c.Cui.SetKeybinding("", 'a', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		c.ScanAllImages(context.Background())
-		return nil
-	}); err != nil {
+	if err := c.Cui.SetKeybinding("", 'a', gocui.ModNone, c.ScanAllImages); err != nil {
 		return fmt.Errorf("error setting keybinding for scanning all images: %w", err)
 	}
 
@@ -40,30 +35,11 @@ func (c *Controller) configureKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for refreshing images: %w", err)
 	}
 
-	if err := c.Cui.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if c.Cui.CurrentView().Name() == widgets.Results {
-			_, err := c.Cui.SetCurrentView(widgets.Images)
-			if err != nil {
-				return fmt.Errorf("error getting the images view: %w", err)
-			}
-			if v, ok := c.Views[widgets.Images].(*widgets.ImagesWidget); ok {
-				return v.SetSelectedImage(c.state.selectedImage)
-			}
-		}
-		return nil
-	}); err != nil {
+	if err := c.Cui.SetKeybinding("", gocui.KeyArrowLeft, gocui.ModNone, c.moveViewLeft); err != nil {
 		return fmt.Errorf("error setting keybinding for moving left: %w", err)
 	}
 
-	if err := c.Cui.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if c.Cui.CurrentView().Name() == widgets.Images {
-			_, err := c.Cui.SetCurrentView(widgets.Results)
-			if err != nil {
-				return fmt.Errorf("error getting the results view: %w", err)
-			}
-		}
-		return nil
-	}); err != nil {
+	if err := c.Cui.SetKeybinding("", gocui.KeyArrowRight, gocui.ModNone, c.moveViewRight); err != nil {
 		return fmt.Errorf("error setting keybinding for moving right: %w", err)
 	}
 

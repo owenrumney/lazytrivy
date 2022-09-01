@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/owenrumney/lazytrivy/pkg/logger"
 
 	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/aws"
@@ -71,12 +72,15 @@ func (g *Controller) CreateWidgets() error {
 }
 
 func (g *Controller) Initialise() error {
+	if g.config.Debug == true {
+		logger.EnableDebugging()
+	}
 
 	if err := g.cui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, base.Quit); err != nil {
 		return err
 	}
 
-	if err := g.cui.SetKeybinding("", gocui.KeyTab, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := g.cui.SetKeybinding("", 'm', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 
 		switch g.activeController.Tab() {
 		case widgets.VulnerabilitiesTab:

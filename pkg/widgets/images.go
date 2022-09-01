@@ -10,6 +10,7 @@ import (
 )
 
 type ImagesWidget struct {
+	ListWidget
 	name string
 	x, y int
 	w, h int
@@ -24,6 +25,9 @@ func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
 	w := 25
 
 	widget := &ImagesWidget{
+		ListWidget: ListWidget{
+			ctx: g,
+		},
 		name: name,
 		x:    0,
 		y:    0,
@@ -36,11 +40,11 @@ func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
 }
 
 func (w *ImagesWidget) ConfigureKeys() error {
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.PreviousImage); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.previousItem); err != nil {
 		return fmt.Errorf("failed to set the previous image %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.NextImage); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.nextItem); err != nil {
 		return fmt.Errorf("failed to set the next image %w", err)
 	}
 
@@ -85,26 +89,6 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 	}
 
 	w.v = v
-	return nil
-}
-
-func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, _ *gocui.View) error {
-	w.v.MoveCursor(0, -1)
-
-	_, y := w.v.Cursor()
-	if image, err := w.v.Line(y); err == nil {
-		w.ctx.SetSelected(image)
-	}
-	return nil
-}
-
-func (w *ImagesWidget) NextImage(_ *gocui.Gui, _ *gocui.View) error {
-	w.v.MoveCursor(0, 1)
-
-	_, y := w.v.Cursor()
-	if image, err := w.v.Line(y); err == nil {
-		w.ctx.SetSelected(image)
-	}
 	return nil
 }
 

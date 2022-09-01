@@ -8,10 +8,12 @@ import (
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/liamg/tml"
+	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
 type AWSResultWidget struct {
+	ListWidget
 	name            string
 	x, y            int
 	w, h            int
@@ -32,6 +34,9 @@ type AWSResultWidget struct {
 
 func NewAWSResultWidget(name string, g awsContext) *AWSResultWidget {
 	widget := &AWSResultWidget{
+		ListWidget: ListWidget{
+			ctx: g,
+		},
 		name: name,
 		x:    0,
 		y:    0,
@@ -46,12 +51,8 @@ func NewAWSResultWidget(name string, g awsContext) *AWSResultWidget {
 }
 
 func (w *AWSResultWidget) ConfigureKeys() error {
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.nextResult); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w", err)
-	}
-
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.previousResult); err != nil {
-		return fmt.Errorf("failed to set keybinding: %w", err)
+	if err := w.configureListWidgetKeys(w.name); err != nil {
+		panic(err)
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, w.diveDeeper); err != nil {
@@ -128,6 +129,7 @@ func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 	case SummaryResultMode:
 		_, y := w.v.Cursor()
 		w.currentResult = w.results[y-3]
+		logger.Debug("Diving deeper into result: %s", w.currentResult.Target)
 		w.GenerateFilteredReport("ALL")
 	case DetailsResultMode:
 		// x, y, wi, h := v.Dimensions()
@@ -158,74 +160,6 @@ func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (w *AWSResultWidget) previousResult(_ *gocui.Gui, v *gocui.View) error {
-	for {
-		if w.yPos+w.yOrigin > 3 {
-			v.MoveCursor(0, -1)
-			_, y := v.Cursor()
-			currentLine, err := v.Line(y + w.yOrigin)
-			if err != nil {
-				return err
-			}
-			if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
-				break
-			}
-		} else {
-			return nil
-		}
-	}
-
-	_, height := v.Size()
-	if w.yPos == 0 {
-		// we're at the bottom of the list
-		w.page--
-		w.yOrigin = w.page * height
-		w.yPos = 0
-		if w.page == 0 {
-			w.yPos = height - 1
-		}
-	} else {
-		_, w.yPos = v.Cursor()
-	}
-	w.resultIndex--
-	return nil
-}
-
-func (w *AWSResultWidget) nextResult(_ *gocui.Gui, v *gocui.View) error {
-	_, lastY := v.Cursor()
-	for {
-		v.MoveCursor(0, 1)
-		_, y := v.Cursor()
-		if y == lastY {
-			return nil
-		}
-		lastY = y
-		currentLine, err := v.Line(y + w.yOrigin)
-		if err != nil {
-			return nil //nolint:nilerr
-		}
-		if strings.TrimSpace(currentLine) != "" && !strings.HasPrefix(strings.TrimSpace(currentLine), "Target: ") {
-			break
-		}
-	}
-
-	_, w.yPos = v.Cursor()
-	_, h := v.Size() //nolint:ifshort
-	if w.yPos >= h {
-		// we're at the bottom of the list
-		w.page++
-		w.yOrigin = w.page * h
-		w.yPos = 0
-		if w.page == 0 {
-			w.yPos = 3
-		}
-	}
-
-	w.resultIndex++
-
-	return nil
-}
-
 func (w *AWSResultWidget) Layout(g *gocui.Gui) error {
 	v, err := g.View(w.name)
 	if err != nil {
@@ -237,7 +171,7 @@ func (w *AWSResultWidget) Layout(g *gocui.Gui) error {
 		}
 	}
 
-	v.Clear()
+	w.v = v
 	v.Title = " Results "
 	v.Highlight = true
 	v.SelBgColor = gocui.ColorGreen
@@ -247,26 +181,6 @@ func (w *AWSResultWidget) Layout(g *gocui.Gui) error {
 	} else {
 		v.FrameColor = gocui.ColorDefault
 	}
-
-	width, _ := v.Size()
-	if w.v != nil {
-		width, _ = w.v.Size()
-	}
-
-	w.v = v
-	for _, line := range w.body {
-		switch w.mode {
-		case DetailsResultMode:
-			truncated, unencodedLength := truncateANSIString(line, width-1)
-			printer := fmt.Sprintf("%s%s", truncated, strings.Repeat(" ", width-unencodedLength))
-			_, _ = fmt.Fprintln(v, printer)
-
-		}
-	}
-
-	_ = v.SetCursor(0, w.yPos)
-	_ = v.SetOrigin(0, w.yOrigin)
-
 	return nil
 }
 
@@ -290,7 +204,7 @@ func (w *AWSResultWidget) UpdateResultsTable(report *output.Report) {
 	var bodyContent []string //nolint:prealloc
 
 	headers := []string{
-		fmt.Sprintf("\n ARN% *s", width-55, ""),
+		fmt.Sprintf("\n ARN% *s", width-53, ""),
 		"   Critical",
 		"   High",
 		"   Medium",
@@ -304,8 +218,9 @@ func (w *AWSResultWidget) UpdateResultsTable(report *output.Report) {
 	for _, result := range report.Results {
 		severities := result.GetSeverityCounts()
 
+		target, _ := truncateANSIString(result.Target, width-50)
 		row := []string{
-			fmt.Sprintf(" % -*s", width-50, result.Target),
+			fmt.Sprintf(" % -*s", width-50, target),
 			tml.Sprintf("<bold><red>% 11d</red></bold>", severities["CRITICAL"]),
 			tml.Sprintf("<red>% 7d</red>", severities["HIGH"]),
 			tml.Sprintf("<yellow>% 9d</yellow>", severities["MEDIUM"]),
@@ -317,11 +232,11 @@ func (w *AWSResultWidget) UpdateResultsTable(report *output.Report) {
 	}
 
 	w.body = bodyContent
+
 	w.ctx.RefreshView(w.name)
 
-	w.yPos = 3
-	w.page = 0
-	w.yOrigin = 0
+	w.topMost = 3
+	w.bottomMost = len(w.body)
 	w.v.Subtitle = ""
 }
 
@@ -374,8 +289,11 @@ func (w *AWSResultWidget) GenerateFilteredReport(severity string) {
 	}
 
 	w.body = bodyContent
+	w.topMost = 3
 
 	w.ctx.RefreshView(w.name)
+
+	_ = w.v.SetCursor(0, w.topMost)
 	w.page = 0
 	w.yPos = 3
 	w.yOrigin = 0
@@ -416,6 +334,20 @@ func colouredSeverity(severity string) (string, string) {
 }
 
 func (w *AWSResultWidget) RefreshView() {
+	width, _ := w.v.Size()
+
+	w.v.Clear()
+	for _, line := range w.body {
+		truncated, unencodedLength := truncateANSIString(line, width-1)
+		if strings.HasPrefix(line, "─") {
+			truncated = line
+		}
+		printer := fmt.Sprintf("%s%s", truncated, strings.Repeat(" ", width-unencodedLength))
+		_, _ = fmt.Fprintln(w.v, printer)
+
+	}
+
+	w.v.SetCursor(0, w.topMost)
 }
 
 func (w *AWSResultWidget) CurrentReport() *output.Report {

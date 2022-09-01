@@ -14,7 +14,8 @@ import (
 type ResultsMode int
 
 const (
-	SummaryResultMode = iota
+	ArnResultMode = iota
+	SummaryResultMode
 	DetailsResultMode
 )
 
@@ -266,7 +267,7 @@ func (w *ResultsWidget) Layout(g *gocui.Gui) error {
 			truncated, unencodedLength := truncateANSIString(line, width-1)
 			printer := fmt.Sprintf("%s%s", truncated, strings.Repeat(" ", width-unencodedLength))
 			_, _ = fmt.Fprintln(v, printer)
-		case SummaryResultMode:
+		case SummaryResultMode, ArnResultMode:
 			_, _ = fmt.Fprintln(v, line)
 		}
 	}

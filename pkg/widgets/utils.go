@@ -4,6 +4,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/awesome-gocui/gocui"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -143,4 +144,12 @@ func newANSI(input string) ansiBlob {
 		output = append(output, current)
 	}
 	return output
+}
+
+func exitModal(g *gocui.Gui, v *gocui.View) error {
+	if err := g.DeleteView(v.Name()); err != nil {
+		return err
+	}
+	_, err := g.SetCurrentView(Results)
+	return err
 }

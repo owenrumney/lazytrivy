@@ -1,10 +1,13 @@
 package aws
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
 type state struct {
@@ -42,7 +45,9 @@ func (s *state) listRegions(accountNumber string) ([]string, error) {
 		return nil, err
 	}
 	for _, fileInfo := range fileInfos {
-		regions = append(regions, fileInfo.Name())
+		if fileInfo.IsDir() {
+			regions = append(regions, fileInfo.Name())
+		}
 	}
 	return regions, nil
 }
@@ -97,6 +102,24 @@ func (s *state) setSelected(selectedImage string) {
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 	s.selectedService = selectedImage
+}
+
+func (s *state) getServiceReport(accountID, region, serviceName string) (*output.Report, error) {
+	cachePath := s.accountRegionCache(accountID, region)
+
+	serviceFile := filepath.Join(cachePath, serviceName, "cache.json")
+
+	content, err := os.ReadFile(serviceFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var report output.Report
+	if err := json.Unmarshal(content, &report); err != nil {
+		return nil, err
+	}
+	return &report, nil
+
 }
 
 func getLongestName(names []string) int {

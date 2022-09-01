@@ -10,20 +10,23 @@ import (
 )
 
 type ServicesWidget struct {
+	ListWidget
 	name string
 	x, y int
 	w, h int
 	body string
 
-	imageCount int
-	ctx        awsContext
-	v          *gocui.View
+	ctx awsContext
+	v   *gocui.View
 }
 
 func NewServicesWidget(name string, g awsContext) *ServicesWidget {
 	w := 28
 
 	widget := &ServicesWidget{
+		ListWidget: ListWidget{
+			ctx: g,
+		},
 		name: name,
 		x:    0,
 		y:    0,
@@ -36,11 +39,11 @@ func NewServicesWidget(name string, g awsContext) *ServicesWidget {
 }
 
 func (w *ServicesWidget) ConfigureKeys() error {
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.PreviousItem); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.previousItem); err != nil {
 		return fmt.Errorf("failed to set the previous image %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.NextItem); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.nextItem); err != nil {
 		return fmt.Errorf("failed to set the next image %w", err)
 	}
 
@@ -71,10 +74,9 @@ func (w *ServicesWidget) Layout(g *gocui.Gui) error {
 			return fmt.Errorf("%w", err)
 		}
 		_, _ = fmt.Fprint(v, w.body)
+		v.SetCursor(0, 0)
 	}
 	v.Title = " Services "
-	v.Highlight = true
-	v.Autoscroll = true
 	v.Highlight = true
 	v.SelBgColor = gocui.ColorGreen | gocui.AttrDim
 	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
@@ -88,26 +90,6 @@ func (w *ServicesWidget) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (w *ServicesWidget) PreviousItem(_ *gocui.Gui, _ *gocui.View) error {
-	w.v.MoveCursor(0, -1)
-
-	_, y := w.v.Cursor()
-	if selected, err := w.v.Line(y); err == nil {
-		w.ctx.SetSelected(selected)
-	}
-	return nil
-}
-
-func (w *ServicesWidget) NextItem(_ *gocui.Gui, _ *gocui.View) error {
-	w.v.MoveCursor(0, 1)
-
-	_, y := w.v.Cursor()
-	if selected, err := w.v.Line(y); err == nil {
-		w.ctx.SetSelected(selected)
-	}
-	return nil
-}
-
 func (w *ServicesWidget) RefreshServices(services []string, serviceWidth int) error {
 	// w.w = serviceWidth + 4
 
@@ -116,9 +98,9 @@ func (w *ServicesWidget) RefreshServices(services []string, serviceWidth int) er
 		serviceList[i] = fmt.Sprintf(" % -*s", serviceWidth+1, service)
 	}
 
-	w.imageCount = len(serviceList)
 	w.body = strings.Join(serviceList, "\n")
 	w.v.Clear()
+	w.bottomMost = len(serviceList)
 	_, _ = fmt.Fprintf(w.v, w.body)
 	_ = w.v.SetCursor(0, 0)
 	return nil

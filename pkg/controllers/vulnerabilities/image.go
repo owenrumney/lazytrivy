@@ -36,7 +36,7 @@ func (c *Controller) scanRemote(gui *gocui.Gui, _ *gocui.View) error {
 	maxX, maxY := gui.Size()
 
 	gui.Cursor = true
-	remote, err := widgets.NewInputWidget(widgets.Remote, maxX, maxY, 150, c)
+	remote, err := widgets.NewRemoteImageWidget(widgets.Remote, maxX, maxY, 150, c)
 	if err != nil {
 		return fmt.Errorf("failed to create remote input: %w", err)
 	}
@@ -54,13 +54,13 @@ func (c *Controller) scanRemote(gui *gocui.Gui, _ *gocui.View) error {
 	return nil
 }
 
-func (c *Controller) ScanAllImages(ctx context.Context) {
+func (c *Controller) ScanAllImages(_ *gocui.Gui, _ *gocui.View) error {
 	// c.cleanupResults()
 
 	var cancellable context.Context
 	c.Lock()
 	defer c.Unlock()
-	cancellable, c.ActiveCancel = context.WithCancel(ctx)
+	cancellable, c.ActiveCancel = context.WithCancel(context.Background())
 	go func() {
 		reports, err := c.DockerClient.ScanAllImages(cancellable, c)
 		if err != nil {
@@ -71,6 +71,7 @@ func (c *Controller) ScanAllImages(ctx context.Context) {
 		}
 		c.UpdateStatus("All images scanned.")
 	}()
+	return nil
 }
 
 func (c *Controller) RefreshImages() error {

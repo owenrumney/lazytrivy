@@ -8,10 +8,10 @@ import (
 
 var helpCommands = []string{
 	"",
-	tml.Sprintf(" <blue>[u]</blue>pdate            Rescan account/region"),
-	tml.Sprintf(" <blue>[n]</blue>ew entry         Add an account/region"),
-	tml.Sprintf(" switch <blue>[a]</blue>ccount    Switch account"),
-	tml.Sprintf(" switch <blue>[r]</blue>egion     Switch region"),
+	tml.Sprintf(" <blue>[u]</blue>pdate             Rescan account/region"),
+	tml.Sprintf(" <blue>[n]</blue>ew account/region Add an account/region"),
+	tml.Sprintf(" switch <blue>[a]</blue>ccount     Switch account"),
+	tml.Sprintf(" switch <blue>[r]</blue>egion      Switch region"),
 	"",
 }
 
@@ -19,7 +19,7 @@ func help(gui *gocui.Gui, _ *gocui.View) error {
 
 	w, h := gui.Size()
 
-	v := widgets.NewHelpWidget("help", w/2-22, h/2-4, w/2+22, h/2+3, helpCommands)
+	v := widgets.NewHelpWidget("help", w/2-22, h/2-4, w/2+23, h/2+3, helpCommands)
 
 	gui.SetKeybinding("help", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
 		gui.SetCurrentView("services")
