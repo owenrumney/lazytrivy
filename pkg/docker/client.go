@@ -144,7 +144,6 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 			Dockerfile: "Dockerfile",
 			Tags:       []string{"lazytrivy:latest"},
 		})
-
 		if err != nil {
 			return nil, err
 		}
