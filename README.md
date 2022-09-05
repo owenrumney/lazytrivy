@@ -56,3 +56,11 @@ Press `s` to scan the currently selected image.
 To scan an image that is not already locally on the machine, you can use the `r` key to scan a remote image.
 
 ![Scanning a remote image](./.github/images/scan_remote_image.gif)
+
+### Scanning an AWS Account
+
+To scan an AWS account, you can use the `w` key to switch to AWS mode, from there you can use the `s` key to scan, it will detect any valid credentials it can.
+
+![Scanning an AWS account](./.github/images/scan_aws_account.gif)
+
+By pressing `r` you can switch region in results you already have.

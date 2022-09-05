@@ -26,7 +26,7 @@ func (s *state) accountRegionCache(accountID, region string) string {
 
 func (s *state) listAccountNumbers() ([]string, error) {
 	logger.Debug("listing account numbers")
-	accountNumbers := []string{}
+	var accountNumbers []string
 	fileInfos, err := os.ReadDir(s.cacheDirectory)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (s *state) listAccountNumbers() ([]string, error) {
 
 func (s *state) listRegions(accountNumber string) ([]string, error) {
 	logger.Debug("listing regions")
-	regions := []string{}
+	var regions []string
 	accountPath := filepath.Join(s.cacheDirectory, accountNumber)
 	fileInfos, err := os.ReadDir(accountPath)
 	if err != nil {

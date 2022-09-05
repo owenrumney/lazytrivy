@@ -26,11 +26,6 @@ func Error(format string, args ...interface{}) {
 	log("ERROR", format, args...)
 }
 
-func WithError(err error, format string, args ...interface{}) {
-	Error(format, args...)
-	log("\t", "Error: %s", err)
-}
-
 func log(level string, format string, args ...interface{}) {
 	if debugEnabled {
 		_, _ = fmt.Fprintf(debugFile, fmt.Sprintf("%s [%s] ", time.RFC3339, level)+fmt.Sprintf(format, args...))
