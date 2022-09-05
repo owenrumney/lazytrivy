@@ -125,6 +125,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		logger.Debug("Creating the docker image, it isn't present")
 
 		dockerfile := createDockerFile()
+
 		tempDir, err := os.MkdirTemp("", "lazytrivy")
 		dockerFilePath := filepath.Join(tempDir, "Dockerfile")
 
@@ -144,6 +145,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 			Dockerfile: "Dockerfile",
 			Tags:       []string{"lazytrivy"},
 		})
+
 		if err != nil {
 			return nil, err
 		}
