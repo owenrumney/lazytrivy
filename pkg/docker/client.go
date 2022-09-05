@@ -56,7 +56,7 @@ func (c *Client) ListImages() []string {
 	for _, image := range images {
 		if image.RepoTags != nil {
 			imageName := image.RepoTags[0]
-			if strings.HasPrefix(imageName, "aquasec/trivy:") {
+			if strings.HasPrefix(imageName, "lazytrivy:") {
 				logger.Debug("Found trivy image %s", imageName)
 				c.trivyImagePresent = true
 
@@ -108,7 +108,6 @@ func (c *Client) ScanService(ctx context.Context, serviceName string, accountNo,
 		logger.Debug("Cache will be updated for %s", serviceName)
 		command = append(command, "--update-cache")
 	}
-
 	return c.scan(ctx, command, target, env, progress)
 }
 
@@ -125,11 +124,18 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		logger.Debug("Pulling trivy image, it isn't present")
 		progress.UpdateStatus("Pulling latest Trivy image...")
 
-		resp, _ := c.client.ImagePull(ctx, "aquasec/trivy:latest", types.ImagePullOptions{
-			All: false,
+		dockerfile := createDockerFile()
+
+		resp, err := c.client.ImageBuild(ctx, bytes.NewReader([]byte(dockerfile)), types.ImageBuildOptions{
+			Tags: []string{"lazytrivy:latest"},
 		})
-		defer func() { _ = resp.Close() }()
-		_, _ = io.Copy(io.Discard, resp)
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer func() { _ = resp.Body.Close() }()
+		_, _ = io.Copy(io.Discard, resp.Body)
 	}
 
 	logger.Debug("Running trivy scan with command %s", command)
@@ -144,12 +150,12 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	awsPath := filepath.Join(userHomeDir, ".aws")
 
 	cont, err := c.client.ContainerCreate(ctx, &container.Config{
-		Image:        "aquasec/trivy",
+		Image:        "lazytrivy:latest",
 		Cmd:          command,
 		Env:          env,
 		AttachStdout: true,
 		AttachStderr: false,
-		User:         "root",
+		User:         "trivy",
 	}, &container.HostConfig{
 		Binds: []string{
 			"/var/run/docker.sock:/var/run/docker.sock",
@@ -162,10 +168,10 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	}
 
 	// make sure we kill the container
-	defer func() {
-		logger.Debug("Removing container %s", cont.ID)
-		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
-	}()
+	// defer func() {
+	// 	logger.Debug("Removing container %s", cont.ID)
+	// 	_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
+	// }()
 
 	if err := c.client.ContainerStart(ctx, cont.ID, types.ContainerStartOptions{}); err != nil {
 		return nil, err
@@ -201,6 +207,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
 		return nil, ctx.Err() // nolint
 	default:
+
 		progress.UpdateStatus(fmt.Sprintf("Scanning of %s...done", scanTarget))
 		return rep, nil
 	}
