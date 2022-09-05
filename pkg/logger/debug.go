@@ -14,7 +14,8 @@ var (
 
 func EnableDebugging() {
 	debugEnabled = true
-	debugFile, _ = os.Create(filepath.Join(os.TempDir(), "lazytrivy-logger.log"))
+	logFile := filepath.Join(os.TempDir(), "lazytrivy-logger.log")
+	debugFile, _ = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
 }
 
 func Debug(format string, args ...interface{}) {
@@ -23,6 +24,11 @@ func Debug(format string, args ...interface{}) {
 
 func Error(format string, args ...interface{}) {
 	log("ERROR", format, args...)
+}
+
+func WithError(err error, format string, args ...interface{}) {
+	Error(format, args...)
+	log("\t", "Error: %s", err)
 }
 
 func log(level string, format string, args ...interface{}) {

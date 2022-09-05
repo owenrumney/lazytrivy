@@ -29,7 +29,6 @@ func NewStatusWidget(name string) *StatusWidget {
 }
 
 func (w *StatusWidget) ConfigureKeys() error {
-	// nothing to configure here
 	return nil
 }
 
@@ -52,6 +51,9 @@ func (w *StatusWidget) UpdateStatus(status string) {
 }
 
 func (w *StatusWidget) RefreshView() {
+	if w.v == nil {
+		return
+	}
 	w.v.Clear()
 	_ = tml.Fprintf(w.v, " <blue>%s</blue>", w.body)
 }

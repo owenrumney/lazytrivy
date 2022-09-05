@@ -17,7 +17,10 @@ type AccountWidget struct {
 }
 
 func NewAccountWidget(name, accountNumber, region string) *AccountWidget {
-	accountRegion := fmt.Sprintf("%s (%s)", accountNumber, region)
+	accountRegion := "Not set, scan required"
+	if accountNumber != "" && region != "" {
+		accountRegion = fmt.Sprintf("%s (%s)", accountNumber, region)
+	}
 
 	return &AccountWidget{
 		name: name,
@@ -53,7 +56,13 @@ func (w *AccountWidget) RefreshView() {
 	_, _ = fmt.Fprintf(w.v, w.body)
 }
 
-func (w *AccountWidget) UpdateAccount() {
+func (w *AccountWidget) UpdateAccount(accountNumber, region string) {
 	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	accountRegion := "Not set, scan required"
+	if accountNumber != "" && region != "" {
+		accountRegion = fmt.Sprintf("%s (%s)", accountNumber, region)
+	}
+	w.body = accountRegion
+
+	_ = tml.Fprintf(w.v, " <blue>%s</blue>", w.body)
 }

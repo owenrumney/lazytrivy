@@ -25,7 +25,7 @@ func (w *ChoiceWidget) RefreshView() {
 }
 
 func NewChoiceWidget(name string, x, y, w, h int, title string, choices []string, updateAction func(string) error, ctx awsContext) *ChoiceWidget {
-
+	// TODO change the constructor to accept a parent size and calculate the size of the view
 	return &ChoiceWidget{
 		ListWidget: ListWidget{
 			ctx:        ctx,

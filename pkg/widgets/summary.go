@@ -40,7 +40,10 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vul
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("summary", gocui.KeyArrowDown, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	// override the default keybindings
+	_ = ctx.SetKeyBinding(Summary, 'a', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error { return nil })
+
+	if err := ctx.SetKeyBinding(Summary, gocui.KeyArrowDown, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		_, oy := view.Origin()
 		_ = view.SetOrigin(0, oy+1)
 
@@ -49,7 +52,7 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vul
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("summary", gocui.KeyArrowUp, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := ctx.SetKeyBinding(Summary, gocui.KeyArrowUp, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		_, oy := view.Origin()
 		if oy > 0 {
 			_ = view.SetOrigin(0, oy-1)
@@ -60,24 +63,24 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vul
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("summary", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := ctx.SetKeyBinding(Summary, gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		gui.Mouse = true
 		gui.Cursor = false
 		if _, err := gui.SetCurrentView(Results); err != nil {
 			return err
 		}
-		return gui.DeleteView("summary")
+		return gui.DeleteView(Summary)
 	}); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("summary", 'q', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := ctx.SetKeyBinding(Summary, 'q', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		gui.Mouse = true
 		gui.Cursor = false
 		if _, err := gui.SetCurrentView(Results); err != nil {
 			return err
 		}
-		return gui.DeleteView("summary")
+		return gui.DeleteView(Summary)
 	}); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -160,26 +163,5 @@ func printMultiline(source string, heading string, lines []string, maxLength int
 		}
 		lines = append(lines, "")
 	}
-	return lines
-}
-
-func prettyLines(input string, maxLength int) []string {
-	var lines []string
-	words := strings.Split(input, " ")
-
-	line := ""
-
-	for _, w := range words {
-		if len(line)+len(w)+1 < maxLength {
-			line += w + " "
-		} else {
-			lines = append(lines, line)
-			line = w + " "
-		}
-	}
-	if len(lines) == 0 && line != "" {
-		lines = append(lines, line)
-	}
-
 	return lines
 }

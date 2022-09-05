@@ -2,11 +2,11 @@ package aws
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
 
+	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
@@ -24,8 +24,9 @@ func (s *state) accountRegionCache(accountID, region string) string {
 }
 
 func (s *state) listAccountNumbers() ([]string, error) {
+	logger.Debug("listing account numbers")
 	var accountNumbers []string
-	fileInfos, err := ioutil.ReadDir(s.cacheDirectory)
+	fileInfos, err := os.ReadDir(s.cacheDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -38,9 +39,10 @@ func (s *state) listAccountNumbers() ([]string, error) {
 }
 
 func (s *state) listRegions(accountNumber string) ([]string, error) {
+	logger.Debug("listing regions")
 	var regions []string
 	accountPath := filepath.Join(s.cacheDirectory, accountNumber)
-	fileInfos, err := ioutil.ReadDir(accountPath)
+	fileInfos, err := os.ReadDir(accountPath)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +58,7 @@ func (s *state) accountRegionCacheExists(accountID, region string) bool {
 	if _, err := os.Stat(s.accountRegionCache(accountID, region)); err == nil {
 		return true
 	}
+	logger.Debug("cache does not exist for %s (%s)", accountID, region)
 	return false
 }
 
@@ -116,10 +119,12 @@ func (s *state) getServiceReport(accountID, region, serviceName string) (*output
 
 	var report output.Report
 	if err := json.Unmarshal(content, &report); err != nil {
+		logger.Error("failed to unmarshal report: %s", err)
 		return nil, err
 	}
-	return &report, nil
+	report.Process()
 
+	return &report, nil
 }
 
 func getLongestName(names []string) int {

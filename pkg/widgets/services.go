@@ -54,16 +54,6 @@ func (w *ServicesWidget) ConfigureKeys() error {
 		return fmt.Errorf("error setting keybinding for scanning image: %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if image := w.SelectedService(); image != "" {
-			w.ctx.ScanService(context.Background(), image)
-		}
-
-		return nil
-	}); err != nil {
-		return fmt.Errorf("%w", err)
-	}
-
 	return nil
 }
 
@@ -74,7 +64,7 @@ func (w *ServicesWidget) Layout(g *gocui.Gui) error {
 			return fmt.Errorf("%w", err)
 		}
 		_, _ = fmt.Fprint(v, w.body)
-		v.SetCursor(0, 0)
+		_ = v.SetCursor(0, 0)
 	}
 	v.Title = " Services "
 	v.Highlight = true
@@ -103,19 +93,6 @@ func (w *ServicesWidget) RefreshServices(services []string, serviceWidth int) er
 	w.bottomMost = len(serviceList)
 	_, _ = fmt.Fprintf(w.v, w.body)
 	_ = w.v.SetCursor(0, 0)
-	return nil
-}
-
-func (w *ServicesWidget) SetSelectedImage(image string) error {
-	for i, line := range strings.Split(w.body, "\n") {
-		if strings.TrimSpace(line) == image {
-			y := i + 1
-			if err := w.v.SetCursor(0, y); err != nil {
-				return fmt.Errorf("%w", err)
-			}
-			break
-		}
-	}
 	return nil
 }
 

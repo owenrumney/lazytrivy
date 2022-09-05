@@ -5,9 +5,11 @@ import (
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
+	"github.com/owenrumney/lazytrivy/pkg/logger"
 )
 
 func (c *Controller) configureKeyBindings() error {
+	logger.Debug("Configuring global AWS Controller keyboard shortcuts")
 	if err := c.ConfigureGlobalKeyBindings(); err != nil {
 		return fmt.Errorf("error configuring global keybindings: %w", err)
 	}
@@ -29,15 +31,15 @@ func (c *Controller) configureKeyBindings() error {
 	}
 
 	if err := c.Cui.SetKeybinding("", 'a', gocui.ModNone, c.switchAccount); err != nil {
-		return fmt.Errorf("error settin keybinding for switching account %w", err)
+		return fmt.Errorf("error setting keybinding for switching account %w", err)
 	}
 
 	if err := c.Cui.SetKeybinding("", 'r', gocui.ModNone, c.switchRegion); err != nil {
-		return fmt.Errorf("error settin keybinding for switching region %w", err)
+		return fmt.Errorf("error setting keybinding for switching region %w", err)
 	}
 
-	if err := c.Cui.SetKeybinding("", 'n', gocui.ModNone, c.addNewAccount); err != nil {
-		return fmt.Errorf("error settin keybinding for adding an account %w", err)
+	if err := c.Cui.SetKeybinding("", 's', gocui.ModNone, c.scanAccount); err != nil {
+		return fmt.Errorf("error setting keybinding for scanning account %w", err)
 	}
 
 	return nil

@@ -10,7 +10,6 @@ type baseContext interface {
 	SetKeyBinding(viewName string, key interface{}, mod gocui.Modifier, handler func(*gocui.Gui, *gocui.View) error) error
 	SetSelected(selected string)
 	RefreshView(viewName string)
-	RefreshWidget(widget Widget)
 }
 
 type vulnerabilityContext interface {

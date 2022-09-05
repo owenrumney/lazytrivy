@@ -21,6 +21,7 @@ func (w *HelpWidget) RefreshView() {
 }
 
 func NewHelpWidget(name string, x, y, w, h int, helpItems []string) *HelpWidget {
+	// TODO update to accept parent size and calculate own size based on helpItems
 
 	return &HelpWidget{
 		name: name,

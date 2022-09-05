@@ -14,7 +14,6 @@ type ImagesWidget struct {
 	name string
 	x, y int
 	w, h int
-	body string
 
 	imageCount int
 	ctx        vulnerabilityContext
@@ -26,7 +25,8 @@ func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
 
 	widget := &ImagesWidget{
 		ListWidget: ListWidget{
-			ctx: g,
+			ctx:                 g,
+			selectionChangeFunc: g.SetSelected,
 		},
 		name: name,
 		x:    0,
@@ -49,7 +49,9 @@ func (w *ImagesWidget) ConfigureKeys() error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		w.ctx.ScanImage(context.Background(), w.SelectedImage())
+		if image := w.SelectedImage(); image != "" {
+			w.ctx.ScanImage(context.Background(), image)
+		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("error setting keybinding for scanning image: %w", err)
@@ -74,7 +76,8 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
-		_, _ = fmt.Fprint(v, w.body)
+		w.v = v
+		w.RefreshView()
 	}
 	v.Title = " Images "
 	v.Highlight = true
@@ -88,7 +91,6 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 		v.FrameColor = gocui.ColorDefault
 	}
 
-	w.v = v
 	return nil
 }
 
@@ -97,19 +99,19 @@ func (w *ImagesWidget) RefreshImages(images []string, imageWidth int) error {
 
 	imageList := make([]string, len(images))
 	for i, image := range images {
-		imageList[i] = fmt.Sprintf(" % -*s", imageWidth+1, image)
+		imageList[i] = fmt.Sprintf("**%d*** % -*s", i, imageWidth+1, image)
 	}
 
-	w.imageCount = len(imageList)
-	w.body = strings.Join(imageList, "\n")
-	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	w.bottomMost = len(imageList)
+	w.body = imageList
+	w.RefreshView()
 	_ = w.v.SetCursor(0, 0)
 	return nil
 }
 
 func (w *ImagesWidget) SetSelectedImage(image string) error {
-	for i, line := range strings.Split(w.body, "\n") {
+	for i, line := range w.body {
+		line = strings.TrimPrefix(line, "** ")
 		if strings.TrimSpace(line) == image {
 			y := i + 1
 			if err := w.v.SetCursor(0, y); err != nil {
@@ -124,12 +126,14 @@ func (w *ImagesWidget) SetSelectedImage(image string) error {
 func (w *ImagesWidget) SelectedImage() string {
 	_, y := w.v.Cursor()
 	if image, err := w.v.Line(y); err == nil {
-		return strings.TrimSpace(image)
+		return stripIdentifierPrefix(image)
 	}
 	return ""
 }
 
 func (w *ImagesWidget) RefreshView() {
 	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	for _, line := range w.body {
+		_, _ = fmt.Fprintln(w.v, stripIdentifierPrefix(line))
+	}
 }
