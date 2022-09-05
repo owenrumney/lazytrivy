@@ -182,7 +182,7 @@ func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report) {
 
 	w.ctx.RefreshView(w.name)
 
-	w.topMost = 3
+	w.SetStartPosition(3)
 	w.bottomMost = len(w.body)
 	w.v.Subtitle = ""
 }
@@ -248,11 +248,10 @@ func (w *AWSResultWidget) GenerateFilteredReport(severity string) {
 	}
 
 	w.body = bodyContent
-	w.topMost = 3
 
 	w.ctx.RefreshView(w.name)
 
-	_ = w.v.SetCursor(0, w.topMost)
+	w.SetStartPosition(3)
 	w.v.Subtitle = fmt.Sprintf(" %s ", strings.Join(severities, " | "))
 }
 

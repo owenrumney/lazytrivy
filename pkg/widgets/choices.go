@@ -3,7 +3,6 @@ package widgets
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/awesome-gocui/gocui"
 )
@@ -45,6 +44,10 @@ func NewChoiceWidget(name string, x, y, w, h int, title string, choices []string
 }
 
 func (w *ChoiceWidget) ConfigureKeys() error {
+	if err := w.configureListWidgetKeys(w.name); err != nil {
+		return err
+	}
+
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEsc, gocui.ModNone, exitModal); err != nil {
 		return fmt.Errorf("error will setting choices key binding to escape: %w", err)
 	}
@@ -54,7 +57,9 @@ func (w *ChoiceWidget) ConfigureKeys() error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if err := w.updateAction(w.body[w.currentPos]); err != nil {
+		line := w.body[w.currentPos]
+		line = stripIdentifierPrefix(line)
+		if err := w.updateAction(line); err != nil {
 			return err
 		}
 
@@ -72,12 +77,12 @@ func (w *ChoiceWidget) Layout(g *gocui.Gui) error {
 			return fmt.Errorf("%w", err)
 		}
 		v.Clear()
-		_, _ = fmt.Fprint(v, "\n ")
-		_, _ = fmt.Fprint(v, strings.Join(w.body, "\n "))
-
-		if err := v.SetCursor(0, 2); err != nil {
-			return fmt.Errorf("error while moving cursor: %w", err)
+		for _, line := range w.body {
+			line = stripIdentifierPrefix(line)
+			_, _ = fmt.Fprintln(v, fmt.Sprintf(" %s ", line))
 		}
+
+		w.SetStartPosition(0)
 		w.v = v
 		if err := w.ConfigureKeys(); err != nil {
 			return err
@@ -86,6 +91,9 @@ func (w *ChoiceWidget) Layout(g *gocui.Gui) error {
 	}
 	v.Title = fmt.Sprintf(" %s ", w.title)
 	v.Highlight = true
+	v.Autoscroll = false
+	v.SelBgColor = gocui.ColorGreen
+	v.SelFgColor = gocui.ColorBlack
 	v.Wrap = true
 	v.FrameColor = gocui.ColorGreen
 

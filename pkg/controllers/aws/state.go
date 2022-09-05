@@ -2,6 +2,7 @@ package aws
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -25,14 +26,14 @@ func (s *state) accountRegionCache(accountID, region string) string {
 
 func (s *state) listAccountNumbers() ([]string, error) {
 	logger.Debug("listing account numbers")
-	var accountNumbers []string
+	accountNumbers := []string{}
 	fileInfos, err := os.ReadDir(s.cacheDirectory)
 	if err != nil {
 		return nil, err
 	}
-	for _, fileInfo := range fileInfos {
+	for i, fileInfo := range fileInfos {
 		if fileInfo.IsDir() {
-			accountNumbers = append(accountNumbers, fileInfo.Name())
+			accountNumbers = append(accountNumbers, fmt.Sprintf("**%d***  %s  ", i, fileInfo.Name()))
 		}
 	}
 	return accountNumbers, nil
@@ -40,15 +41,15 @@ func (s *state) listAccountNumbers() ([]string, error) {
 
 func (s *state) listRegions(accountNumber string) ([]string, error) {
 	logger.Debug("listing regions")
-	var regions []string
+	regions := []string{}
 	accountPath := filepath.Join(s.cacheDirectory, accountNumber)
 	fileInfos, err := os.ReadDir(accountPath)
 	if err != nil {
 		return nil, err
 	}
-	for _, fileInfo := range fileInfos {
+	for i, fileInfo := range fileInfos {
 		if fileInfo.IsDir() {
-			regions = append(regions, fileInfo.Name())
+			regions = append(regions, fmt.Sprintf("**%d***  %s  ", i, fileInfo.Name()))
 		}
 	}
 	return regions, nil

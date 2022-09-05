@@ -46,17 +46,9 @@ func (c *Controller) Initialise() error {
 
 	c.Cui.Update(func(gui *gocui.Gui) error {
 
-		logger.Debug("getting caches services")
-		services, err := c.accountRegionCacheServices(c.Config.AWS.AccountNo, c.Config.AWS.Region)
+		err := c.refreshServices()
 		if err != nil {
 			return err
-		}
-
-		logger.Debug("Updating the services view with the identified services")
-		if v, ok := c.Views[widgets.Services].(*widgets.ServicesWidget); ok {
-			if err := v.RefreshServices(services, 20); err != nil {
-				return err
-			}
 		}
 
 		logger.Debug("Configuring keyboard shortcuts")
@@ -85,10 +77,26 @@ func (c *Controller) Initialise() error {
 	return outerErr
 }
 
+func (c *Controller) refreshServices() error {
+	logger.Debug("getting caches services")
+	services, err := c.accountRegionCacheServices(c.Config.AWS.AccountNo, c.Config.AWS.Region)
+	if err != nil {
+		return err
+	}
+
+	logger.Debug("Updating the services view with the identified services")
+	if v, ok := c.Views[widgets.Services].(*widgets.ServicesWidget); ok {
+		if err := v.RefreshServices(services, 20); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Controller) CreateWidgets(manager base.Manager) error {
 	logger.Debug("Creating AWS view widgets")
 	menuItems := []string{
-		"<blue>[?]</blue> help", "switch <blue>[m]</blue>ode", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
+		"<blue>[?]</blue> help", "s<blue>[w]</blue>itch mode", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
 		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
 	}
 
@@ -117,20 +125,30 @@ func (c *Controller) UpdateAccount(account string) error {
 		return err
 	}
 
-	if v, ok := c.Views[widgets.Account]; ok {
-		if a, ok := v.(*widgets.AccountWidget); ok {
-			logger.Debug("Updating the AWS account details in the UI")
-			a.UpdateAccount(c.Config.AWS.AccountNo, c.Config.AWS.Region)
-		}
-	}
-
-	return nil
+	return c.update()
 }
 
 func (c *Controller) UpdateRegion(region string) error {
 	logger.Debug("Updating the AWS region details in the config")
 	c.Config.AWS.Region = region
-	return c.Config.Save()
+	if err := c.Config.Save(); err != nil {
+		return err
+	}
+	return c.update()
+}
+
+func (c *Controller) update() error {
+	if v, ok := c.Views[widgets.Account]; ok {
+		if a, ok := v.(*widgets.AccountWidget); ok {
+			logger.Debug("Updating the AWS account details in the UI")
+			a.UpdateAccount(c.Config.AWS.AccountNo, c.Config.AWS.Region)
+			if err := c.refreshServices(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *Controller) Tab() widgets.Tab {

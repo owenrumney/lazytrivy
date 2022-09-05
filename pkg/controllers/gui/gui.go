@@ -66,7 +66,7 @@ func (c *Controller) Initialise() error {
 		return err
 	}
 
-	if err := c.cui.SetKeybinding("", 'm', gocui.ModNone, c.switchMode); err != nil {
+	if err := c.cui.SetKeybinding("", 'w', gocui.ModNone, c.switchMode); err != nil {
 		return fmt.Errorf("error while creating Tabs navigation key binding: %w", err)
 	}
 
