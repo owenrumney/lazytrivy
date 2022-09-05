@@ -125,7 +125,6 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		logger.Debug("Creating the docker image, it isn't present")
 
 		dockerfile := createDockerFile()
-
 		tempDir, err := os.MkdirTemp("", "lazytrivy")
 		dockerFilePath := filepath.Join(tempDir, "Dockerfile")
 
@@ -143,7 +142,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		resp, err := c.client.ImageBuild(ctx, tar, types.ImageBuildOptions{
 			PullParent: true,
 			Dockerfile: "Dockerfile",
-			Tags:       []string{"lazytrivy"},
+			Tags:       []string{"lazytrivy:latest"},
 		})
 
 		if err != nil {
