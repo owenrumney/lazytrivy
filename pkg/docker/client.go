@@ -123,7 +123,6 @@ func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progr
 func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress) (*output.Report, error) {
 	if !c.trivyImagePresent {
 		logger.Debug("Creating the docker image, it isn't present")
-		progress.UpdateStatus("Building the new image...")
 
 		dockerfile := createDockerFile()
 		tempDir, err := os.MkdirTemp("", "lazytrivy")
@@ -143,16 +142,17 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		resp, err := c.client.ImageBuild(ctx, tar, types.ImageBuildOptions{
 			PullParent: true,
 			Dockerfile: "Dockerfile",
-
-			Tags: []string{"lazytrivy:latest"},
+			Tags:       []string{"lazytrivy"},
 		})
-
 		if err != nil {
 			return nil, err
 		}
 
-		defer func() { _ = resp.Body.Close() }()
 		_, _ = io.Copy(io.Discard, resp.Body)
+		if err := resp.Body.Close(); err != nil {
+			return nil, err
+		}
+
 	}
 
 	logger.Debug("Running trivy scan with command %s", command)
