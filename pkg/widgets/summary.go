@@ -136,6 +136,7 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 
 	_, _ = fmt.Fprintln(v, strings.Join(lines, "\n"))
 	v.Title = fmt.Sprintf(" Summary for %s ", i.vuln.VulnerabilityID)
+	v.Subtitle = " Escape or 'q' to close "
 	v.Wrap = true
 	v.TitleColor = gocui.ColorGreen
 	v.FrameColor = gocui.ColorGreen

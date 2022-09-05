@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
@@ -56,7 +57,7 @@ func (c *Client) ListImages() []string {
 	for _, image := range images {
 		if image.RepoTags != nil {
 			imageName := image.RepoTags[0]
-			if strings.HasPrefix(imageName, "aquasec/trivy:") {
+			if strings.HasPrefix(imageName, "lazytrivy:") {
 				logger.Debug("Found trivy image %s", imageName)
 				c.trivyImagePresent = true
 
@@ -108,7 +109,6 @@ func (c *Client) ScanService(ctx context.Context, serviceName string, accountNo,
 		logger.Debug("Cache will be updated for %s", serviceName)
 		command = append(command, "--update-cache")
 	}
-
 	return c.scan(ctx, command, target, env, progress)
 }
 
@@ -122,14 +122,37 @@ func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progr
 
 func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress) (*output.Report, error) {
 	if !c.trivyImagePresent {
-		logger.Debug("Pulling trivy image, it isn't present")
-		progress.UpdateStatus("Pulling latest Trivy image...")
+		logger.Debug("Creating the docker image, it isn't present")
 
-		resp, _ := c.client.ImagePull(ctx, "aquasec/trivy:latest", types.ImagePullOptions{
-			All: false,
+		dockerfile := createDockerFile()
+		tempDir, err := os.MkdirTemp("", "lazytrivy")
+		dockerFilePath := filepath.Join(tempDir, "Dockerfile")
+
+		defer func() { _ = os.RemoveAll(tempDir) }()
+
+		if err := os.WriteFile(dockerFilePath, []byte(dockerfile), 0644); err != nil {
+			return nil, err
+		}
+
+		tar, err := archive.TarWithOptions(tempDir, &archive.TarOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := c.client.ImageBuild(ctx, tar, types.ImageBuildOptions{
+			PullParent: true,
+			Dockerfile: "Dockerfile",
+			Tags:       []string{"lazytrivy"},
 		})
-		defer func() { _ = resp.Close() }()
-		_, _ = io.Copy(io.Discard, resp)
+		if err != nil {
+			return nil, err
+		}
+
+		_, _ = io.Copy(io.Discard, resp.Body)
+		if err := resp.Body.Close(); err != nil {
+			return nil, err
+		}
+
 	}
 
 	logger.Debug("Running trivy scan with command %s", command)
@@ -144,12 +167,12 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	awsPath := filepath.Join(userHomeDir, ".aws")
 
 	cont, err := c.client.ContainerCreate(ctx, &container.Config{
-		Image:        "aquasec/trivy",
+		Image:        "lazytrivy:latest",
 		Cmd:          command,
 		Env:          env,
 		AttachStdout: true,
 		AttachStderr: false,
-		User:         "root",
+		User:         "trivy",
 	}, &container.HostConfig{
 		Binds: []string{
 			"/var/run/docker.sock:/var/run/docker.sock",
@@ -161,7 +184,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		return nil, err
 	}
 
-	// make sure we kill the container
+	//  make sure we kill the container
 	defer func() {
 		logger.Debug("Removing container %s", cont.ID)
 		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
@@ -201,6 +224,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
 		return nil, ctx.Err() // nolint
 	default:
+
 		progress.UpdateStatus(fmt.Sprintf("Scanning of %s...done", scanTarget))
 		return rep, nil
 	}
