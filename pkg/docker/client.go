@@ -142,7 +142,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		resp, err := c.client.ImageBuild(ctx, tar, types.ImageBuildOptions{
 			PullParent: true,
 			Dockerfile: "Dockerfile",
-			Tags:       []string{"lazytrivy"},
+			Tags:       []string{"lazytrivy:latest"},
 		})
 		if err != nil {
 			return nil, err

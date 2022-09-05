@@ -123,7 +123,7 @@ func (c *Controller) RefreshManager() {
 
 }
 
-func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
+func (c *Controller) switchMode(*gocui.Gui, *gocui.View) error {
 
 	switch c.activeController.Tab() {
 	case widgets.VulnerabilitiesTab:

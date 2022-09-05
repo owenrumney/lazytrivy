@@ -13,8 +13,7 @@ import (
 type ResultsMode int
 
 const (
-	ArnResultMode = iota
-	SummaryResultMode
+	SummaryResultMode ResultsMode = iota
 	DetailsResultMode
 )
 
