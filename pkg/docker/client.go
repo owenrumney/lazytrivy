@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
@@ -121,12 +122,28 @@ func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progr
 
 func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress) (*output.Report, error) {
 	if !c.trivyImagePresent {
-		logger.Debug("Pulling trivy image, it isn't present")
-		progress.UpdateStatus("Pulling latest Trivy image...")
+		logger.Debug("Creating the docker image, it isn't present")
+		progress.UpdateStatus("Building the new image...")
 
 		dockerfile := createDockerFile()
+		tempDir, err := os.MkdirTemp("", "lazytrivy")
+		dockerFilePath := filepath.Join(tempDir, "Dockerfile")
 
-		resp, err := c.client.ImageBuild(ctx, bytes.NewReader([]byte(dockerfile)), types.ImageBuildOptions{
+		defer func() { _ = os.RemoveAll(tempDir) }()
+
+		if err := os.WriteFile(dockerFilePath, []byte(dockerfile), 0644); err != nil {
+			return nil, err
+		}
+
+		tar, err := archive.TarWithOptions(tempDir, &archive.TarOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := c.client.ImageBuild(ctx, tar, types.ImageBuildOptions{
+			PullParent: true,
+			Dockerfile: "Dockerfile",
+
 			Tags: []string{"lazytrivy:latest"},
 		})
 
@@ -167,11 +184,11 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		return nil, err
 	}
 
-	// make sure we kill the container
-	// defer func() {
-	// 	logger.Debug("Removing container %s", cont.ID)
-	// 	_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
-	// }()
+	//  make sure we kill the container
+	defer func() {
+		logger.Debug("Removing container %s", cont.ID)
+		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
+	}()
 
 	if err := c.client.ContainerStart(ctx, cont.ID, types.ContainerStartOptions{}); err != nil {
 		return nil, err
