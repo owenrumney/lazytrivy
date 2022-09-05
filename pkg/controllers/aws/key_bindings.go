@@ -42,5 +42,9 @@ func (c *Controller) configureKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for scanning account %w", err)
 	}
 
+	if err := c.Cui.SetKeybinding("", 's', gocui.ModNone, c.scanAccount); err != nil {
+		return fmt.Errorf("error setting keybinding for scanning account %w", err)
+	}
+
 	return nil
 }

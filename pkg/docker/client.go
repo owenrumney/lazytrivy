@@ -82,12 +82,14 @@ func (c *Client) ScanService(ctx context.Context, serviceName string, accountNo,
 
 	var updateCache bool
 	target := accountNo
+	additionalInfo := " maybe make a cuppa"
 	if serviceName != "" {
 		updateCache = true
 		target = serviceName
+		additionalInfo = ""
 	}
 
-	progress.UpdateStatus(fmt.Sprintf("Scanning %s...", target))
+	progress.UpdateStatus(fmt.Sprintf("Scanning %s...%s", target, additionalInfo))
 	for _, envVar := range os.Environ() {
 		if strings.HasPrefix(envVar, "AWS_") {
 			env = append(env, envVar)

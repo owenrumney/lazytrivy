@@ -292,6 +292,9 @@ func (c *Controller) scanAccount(gui *gocui.Gui, _ *gocui.View) error {
 		})
 
 		_, _ = gui.SetCurrentView(widgets.Results)
+		if err := c.refreshServices(); err != nil {
+			logger.Error("Error refreshing services: %v", err)
+		}
 		c.UpdateStatus("Account scan complete.")
 	}()
 	return nil
