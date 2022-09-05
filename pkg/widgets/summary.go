@@ -18,7 +18,7 @@ type SummaryWidget struct {
 	vuln output.Vulnerability
 }
 
-func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output.Vulnerability) (*SummaryWidget, error) {
+func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vulnerability output.Vulnerability) (*SummaryWidget, error) {
 	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if len(view.BufferLines()) > 0 {
 			if image, _ := view.Line(0); image != "" {
@@ -40,7 +40,10 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("summary", gocui.KeyArrowDown, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	// override the default keybindings
+	_ = ctx.SetKeyBinding(Summary, 'a', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error { return nil })
+
+	if err := ctx.SetKeyBinding(Summary, gocui.KeyArrowDown, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		_, oy := view.Origin()
 		_ = view.SetOrigin(0, oy+1)
 
@@ -49,7 +52,7 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("summary", gocui.KeyArrowUp, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := ctx.SetKeyBinding(Summary, gocui.KeyArrowUp, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		_, oy := view.Origin()
 		if oy > 0 {
 			_ = view.SetOrigin(0, oy-1)
@@ -60,24 +63,24 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx ctx, vulnerability output
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("summary", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := ctx.SetKeyBinding(Summary, gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		gui.Mouse = true
 		gui.Cursor = false
 		if _, err := gui.SetCurrentView(Results); err != nil {
 			return err
 		}
-		return gui.DeleteView("summary")
+		return gui.DeleteView(Summary)
 	}); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	if err := ctx.SetKeyBinding("summary", 'q', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+	if err := ctx.SetKeyBinding(Summary, 'q', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		gui.Mouse = true
 		gui.Cursor = false
 		if _, err := gui.SetCurrentView(Results); err != nil {
 			return err
 		}
-		return gui.DeleteView("summary")
+		return gui.DeleteView(Summary)
 	}); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -94,7 +97,7 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 	lines = printSingleLine(vulnerability.VulnerabilityID, "Vulnerability ID", lines)
 
 	if vulnerability.DataSource != nil && vulnerability.DataSource.Name != "" {
-		lines = append(lines, tml.Sprintf("<green>DataSource:</green>\n  %s\n", vulnerability.DataSource.Name))
+		lines = append(lines, tml.Sprintf("<green> DataSource:</green>\n   %s\n", vulnerability.DataSource.Name))
 	}
 	lines = printSingleLine(vulnerability.Severity, "Severity", lines)
 	lines = printSingleLine(vulnerability.SeveritySource, "Severity Source", lines)
@@ -104,10 +107,10 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 	lines = printSingleLine(vulnerability.FixedVersion, "Fixed Version", lines)
 	if vulnerability.CVSS != nil {
 		for cvss, vals := range vulnerability.CVSS {
-			lines = append(lines, tml.Sprintf("<green>%s:</green>", cvss))
+			lines = append(lines, tml.Sprintf("<green> %s:</green>", cvss))
 			if valsMap, ok := vals.(map[string]interface{}); ok {
 				for k, v := range valsMap {
-					lines = append(lines, tml.Sprintf("  %s: %v", k, v))
+					lines = append(lines, tml.Sprintf("   %s: %v", k, v))
 				}
 			}
 			lines = append(lines, "")
@@ -115,12 +118,12 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 	}
 
 	if vulnerability.PrimaryURL != "" {
-		lines = append(lines, tml.Sprintf("<green>More Info:</green>\n  <blue>%s</blue>\n", vulnerability.PrimaryURL))
+		lines = append(lines, tml.Sprintf("<green> More Info:</green>\n   <blue>%s</blue>\n", vulnerability.PrimaryURL))
 	}
 	if len(vulnerability.References) > 0 {
-		lines = append(lines, tml.Sprintf("<green>References:</green>"))
+		lines = append(lines, tml.Sprintf("<green> References:</green>"))
 		for _, reference := range vulnerability.References {
-			lines = append(lines, tml.Sprintf("  <blue>%s</blue>", reference))
+			lines = append(lines, tml.Sprintf("   <blue>%s</blue>", reference))
 		}
 	}
 
@@ -141,7 +144,7 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 
 func printSingleLine(source string, heading string, lines []string) []string {
 	if source != "" {
-		lines = append(lines, tml.Sprintf("<green>%s:</green>\n  %s\n", heading, source))
+		lines = append(lines, tml.Sprintf("<green> %s:</green>\n   %s\n", heading, source))
 	}
 	return lines
 }
@@ -152,7 +155,7 @@ func printMultiline(source string, heading string, lines []string, maxLength int
 		first := true
 		for _, line := range titleLines {
 			if first {
-				lines = append(lines, tml.Sprintf("\n<green>%s:</green>\n  %s", heading, line))
+				lines = append(lines, tml.Sprintf("\n<green> %s:</green>\n   %s", heading, line))
 				first = false
 			} else {
 				lines = append(lines, tml.Sprintf("  %s", line))
@@ -160,26 +163,5 @@ func printMultiline(source string, heading string, lines []string, maxLength int
 		}
 		lines = append(lines, "")
 	}
-	return lines
-}
-
-func prettyLines(input string, maxLength int) []string {
-	var lines []string
-	words := strings.Split(input, " ")
-
-	line := ""
-
-	for _, w := range words {
-		if len(line)+len(w)+1 < maxLength {
-			line += w + " "
-		} else {
-			lines = append(lines, line)
-			line = w + " "
-		}
-	}
-	if len(lines) == 0 && line != "" {
-		lines = append(lines, line)
-	}
-
 	return lines
 }

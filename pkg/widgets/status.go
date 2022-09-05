@@ -14,10 +14,9 @@ type StatusWidget struct {
 	w, h int
 	body string
 	v    *gocui.View
-	ctx  ctx
 }
 
-func NewStatusWidget(name string, ctx ctx) *StatusWidget {
+func NewStatusWidget(name string) *StatusWidget {
 	return &StatusWidget{
 		name: name,
 		x:    0,
@@ -26,12 +25,10 @@ func NewStatusWidget(name string, ctx ctx) *StatusWidget {
 		h:    1,
 		body: "",
 		v:    nil,
-		ctx:  ctx,
 	}
 }
 
 func (w *StatusWidget) ConfigureKeys() error {
-	// nothing to configure here
 	return nil
 }
 
@@ -51,10 +48,12 @@ func (w *StatusWidget) Layout(g *gocui.Gui) error {
 
 func (w *StatusWidget) UpdateStatus(status string) {
 	w.body = status
-	w.ctx.RefreshView(w.name)
 }
 
 func (w *StatusWidget) RefreshView() {
+	if w.v == nil {
+		return
+	}
 	w.v.Clear()
 	_ = tml.Fprintf(w.v, " <blue>%s</blue>", w.body)
 }

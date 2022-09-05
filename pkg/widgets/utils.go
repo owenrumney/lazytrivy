@@ -4,6 +4,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/awesome-gocui/gocui"
 	"github.com/mattn/go-runewidth"
 )
 
@@ -143,4 +144,73 @@ func newANSI(input string) ansiBlob {
 		output = append(output, current)
 	}
 	return output
+}
+
+func exitModal(g *gocui.Gui, v *gocui.View) error {
+	if err := g.DeleteView(v.Name()); err != nil {
+		return err
+	}
+	_, err := g.SetCurrentView(Results)
+	return err
+}
+
+func prettyLines(input string, maxLength int) []string {
+	var lines []string
+	words := strings.Split(input, " ")
+
+	line := ""
+
+	for _, w := range words {
+		if len(line)+len(w)+1 < maxLength {
+			line += w + " "
+		} else {
+			lines = append(lines, line)
+			line = w + " "
+		}
+	}
+	if len(lines) == 0 && line != "" {
+		lines = append(lines, line)
+	}
+
+	return lines
+}
+
+func stripIdentifierPrefix(identifier string) string {
+	parts := strings.Split(identifier, "***")
+	if len(parts) > 1 {
+		return strings.TrimSpace(parts[1])
+	}
+	return strings.TrimSpace(identifier)
+}
+
+func severityAsInt(severity string) int {
+	switch severity {
+	case "CRITICAL":
+		return 0
+	case "HIGH":
+		return 1
+	case "MEDIUM":
+		return 2
+	case "LOW":
+		return 3
+	case "UNKNOWN":
+		return 5
+	default:
+		return -1
+	}
+}
+
+func colouredSeverity(severity string) (string, string) {
+	switch severity {
+	case "CRITICAL":
+		return "<bold><red>", "</red></bold>"
+	case "HIGH":
+		return "<red>", "</red>"
+	case "MEDIUM":
+		return "<yellow>", "</yellow>"
+	case "LOW":
+		return "<blue>", "</blue>"
+	default:
+		return "", ""
+	}
 }

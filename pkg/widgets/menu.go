@@ -15,19 +15,13 @@ type MenuWidget struct {
 	w, h int
 	body []string
 	v    *gocui.View
-	ctx  ctx
 }
 
 func (w *MenuWidget) RefreshView() {
 	panic("unimplemented")
 }
 
-func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
-	menuItems := []string{
-		"<blue>[enter] or [s]</blue>can", "scan <blue>[a]</blue>ll", "<blue>[r]</blue>emote",
-		"<green>[i]</green>mage refresh", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
-		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
-	}
+func NewMenuWidget(name string, x, y, w, h int, menuItems []string) *MenuWidget {
 
 	return &MenuWidget{
 		name: name,
@@ -37,7 +31,6 @@ func NewMenuWidget(name string, x, y, w, h int, ctx ctx) *MenuWidget {
 		h:    h,
 		body: menuItems,
 		v:    nil,
-		ctx:  ctx,
 	}
 }
 

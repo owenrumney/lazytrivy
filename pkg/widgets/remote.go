@@ -8,14 +8,14 @@ import (
 	"github.com/awesome-gocui/gocui"
 )
 
-type InputWidget struct {
+type RemoteImageWidget struct {
 	name      string
 	x, y      int
 	w         int
 	maxLength int
 }
 
-func NewInputWidget(name string, maxX, maxY, maxLength int, ctx ctx) (*InputWidget, error) {
+func NewRemoteImageWidget(name string, maxX, maxY, maxLength int, ctx vulnerabilityContext) (*RemoteImageWidget, error) {
 	x1 := maxX/2 - 50
 	x2 := maxX/2 + 50
 	y1 := maxY/2 - 1
@@ -52,10 +52,10 @@ func NewInputWidget(name string, maxX, maxY, maxLength int, ctx ctx) (*InputWidg
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	return &InputWidget{name: name, x: x1, y: y1, w: x2, maxLength: maxLength}, nil
+	return &RemoteImageWidget{name: name, x: x1, y: y1, w: x2, maxLength: maxLength}, nil
 }
 
-func (i *InputWidget) Layout(g *gocui.Gui) error {
+func (i *RemoteImageWidget) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(i.name, i.x, i.y, i.w, i.y+2, 0)
 	if err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -71,7 +71,7 @@ func (i *InputWidget) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (i *InputWidget) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
+func (i *RemoteImageWidget) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 	cx, _ := v.Cursor()
 	ox, _ := v.Origin()
 	limit := ox+cx+1 > i.maxLength

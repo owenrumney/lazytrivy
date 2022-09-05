@@ -10,20 +10,24 @@ import (
 )
 
 type ImagesWidget struct {
+	ListWidget
 	name string
 	x, y int
 	w, h int
-	body string
 
 	imageCount int
-	ctx        ctx
+	ctx        vulnerabilityContext
 	v          *gocui.View
 }
 
-func NewImagesWidget(name string, g ctx) *ImagesWidget {
+func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
 	w := 25
 
 	widget := &ImagesWidget{
+		ListWidget: ListWidget{
+			ctx:                 g,
+			selectionChangeFunc: g.SetSelected,
+		},
 		name: name,
 		x:    0,
 		y:    0,
@@ -36,23 +40,18 @@ func NewImagesWidget(name string, g ctx) *ImagesWidget {
 }
 
 func (w *ImagesWidget) ConfigureKeys() error {
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.PreviousImage); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.previousItem); err != nil {
 		return fmt.Errorf("failed to set the previous image %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.NextImage); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.nextItem); err != nil {
 		return fmt.Errorf("failed to set the next image %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		w.ctx.ScanImage(context.Background(), w.SelectedImage())
-		return nil
-	}); err != nil {
-		return fmt.Errorf("error setting keybinding for scanning image: %w", err)
-	}
-
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		w.ctx.ScanImage(context.Background(), w.SelectedImage())
+		if image := w.SelectedImage(); image != "" {
+			w.ctx.ScanImage(context.Background(), image)
+		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("error setting keybinding for scanning image: %w", err)
@@ -77,7 +76,8 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return fmt.Errorf("%w", err)
 		}
-		_, _ = fmt.Fprint(v, w.body)
+		w.v = v
+		w.RefreshView()
 	}
 	v.Title = " Images "
 	v.Highlight = true
@@ -91,27 +91,6 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 		v.FrameColor = gocui.ColorDefault
 	}
 
-	w.v = v
-	return nil
-}
-
-func (w *ImagesWidget) PreviousImage(_ *gocui.Gui, _ *gocui.View) error {
-	w.v.MoveCursor(0, -1)
-
-	_, y := w.v.Cursor()
-	if image, err := w.v.Line(y); err == nil {
-		w.ctx.SetSelectedImage(image)
-	}
-	return nil
-}
-
-func (w *ImagesWidget) NextImage(_ *gocui.Gui, _ *gocui.View) error {
-	w.v.MoveCursor(0, 1)
-
-	_, y := w.v.Cursor()
-	if image, err := w.v.Line(y); err == nil {
-		w.ctx.SetSelectedImage(image)
-	}
 	return nil
 }
 
@@ -120,19 +99,19 @@ func (w *ImagesWidget) RefreshImages(images []string, imageWidth int) error {
 
 	imageList := make([]string, len(images))
 	for i, image := range images {
-		imageList[i] = fmt.Sprintf(" % -*s", imageWidth+1, image)
+		imageList[i] = fmt.Sprintf("**%d*** % -*s", i, imageWidth+1, image)
 	}
 
-	w.imageCount = len(imageList)
-	w.body = strings.Join(imageList, "\n")
-	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	w.bottomMost = len(imageList)
+	w.body = imageList
+	w.RefreshView()
 	_ = w.v.SetCursor(0, 0)
 	return nil
 }
 
 func (w *ImagesWidget) SetSelectedImage(image string) error {
-	for i, line := range strings.Split(w.body, "\n") {
+	for i, line := range w.body {
+		line = strings.TrimPrefix(line, "** ")
 		if strings.TrimSpace(line) == image {
 			y := i + 1
 			if err := w.v.SetCursor(0, y); err != nil {
@@ -147,12 +126,14 @@ func (w *ImagesWidget) SetSelectedImage(image string) error {
 func (w *ImagesWidget) SelectedImage() string {
 	_, y := w.v.Cursor()
 	if image, err := w.v.Line(y); err == nil {
-		return strings.TrimSpace(image)
+		return stripIdentifierPrefix(image)
 	}
 	return ""
 }
 
 func (w *ImagesWidget) RefreshView() {
 	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	for _, line := range w.body {
+		_, _ = fmt.Fprintln(w.v, stripIdentifierPrefix(line))
+	}
 }

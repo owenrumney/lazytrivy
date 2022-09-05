@@ -1,17 +1,17 @@
-package controller
+package vulnerabilities
 
 import "sync"
 
 type state struct {
-	sync.Mutex
+	stateLock     sync.Mutex
 	images        []string
 	selectedImage string
 	imageWidth    int
 }
 
 func (s *state) updateImages(images []string) {
-	s.Lock()
-	defer s.Unlock()
+	s.stateLock.Lock()
+	defer s.stateLock.Unlock()
 	s.images = images
 
 	s.imageWidth = getLongestImageName(images)
@@ -19,8 +19,8 @@ func (s *state) updateImages(images []string) {
 }
 
 func (s *state) setSelected(selectedImage string) {
-	s.Lock()
-	defer s.Unlock()
+	s.stateLock.Lock()
+	defer s.stateLock.Unlock()
 	s.selectedImage = selectedImage
 }
 
