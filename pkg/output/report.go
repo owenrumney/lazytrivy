@@ -68,10 +68,10 @@ type Misconfiguration struct {
 }
 
 func FromJSON(imageName string, content string) (*Report, error) {
-	logger.Debug("Parsing JSON report")
+	logger.Debugf("Parsing JSON report")
 	var report Report
 	if err := json.Unmarshal([]byte(content), &report); err != nil {
-		logger.Error("Failed to parse JSON report. %s", err)
+		logger.Errorf("Failed to parse JSON report. %s", err)
 		return nil, err
 	}
 	report.Process()

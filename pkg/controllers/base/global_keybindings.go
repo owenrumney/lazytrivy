@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Controller) ConfigureGlobalKeyBindings() error {
-	logger.Debug("Configuring global keyboard shortcuts")
+	logger.Debugf("Configuring global keyboard shortcuts")
 
 	if err := c.Cui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, Quit); err != nil {
 		return fmt.Errorf("error setting keybinding for quitting with Ctrl+C: %w", err)

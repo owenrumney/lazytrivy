@@ -14,19 +14,19 @@ var (
 
 func EnableDebugging() {
 	debugEnabled = true
-	logFile := filepath.Join(os.TempDir(), "lazytrivy-logger.log")
-	debugFile, _ = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	logFile := filepath.Join(os.TempDir(), "lazytrivy-logger.logf")
+	debugFile, _ = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600) // nolint: nosnakecase
 }
 
-func Debug(format string, args ...interface{}) {
-	log("DEBUG", format, args...)
+func Debugf(format string, args ...interface{}) {
+	logf("DEBUG", format, args...)
 }
 
-func Error(format string, args ...interface{}) {
-	log("ERROR", format, args...)
+func Errorf(format string, args ...interface{}) {
+	logf("ERROR", format, args...)
 }
 
-func log(level string, format string, args ...interface{}) {
+func logf(level string, format string, args ...interface{}) {
 	if debugEnabled {
 		_, _ = fmt.Fprintf(debugFile, fmt.Sprintf("%s [%s] ", time.RFC3339, level)+fmt.Sprintf(format, args...))
 		_, _ = fmt.Fprintln(debugFile)

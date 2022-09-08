@@ -19,7 +19,6 @@ type AWSSummaryWidget struct {
 
 func NewAWSSummaryWidget(name string, x, y, w, h int, ctx awsContext, vulnerability output.Misconfiguration) (*AWSSummaryWidget, error) {
 	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-
 		gui.Mouse = true
 		gui.Cursor = false
 

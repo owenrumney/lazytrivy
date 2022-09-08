@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
 type state struct {
-	stateLock       sync.Mutex
 	services        []string
 	selectedService string
 	serviceWidth    int
@@ -25,7 +23,7 @@ func (s *state) accountRegionCache(accountID, region string) string {
 }
 
 func (s *state) listAccountNumbers() ([]string, error) {
-	logger.Debug("listing account numbers")
+	logger.Debugf("listing account numbers")
 	var accountNumbers []string
 	fileInfos, err := os.ReadDir(s.cacheDirectory)
 	if err != nil {
@@ -40,7 +38,7 @@ func (s *state) listAccountNumbers() ([]string, error) {
 }
 
 func (s *state) listRegions(accountNumber string) ([]string, error) {
-	logger.Debug("listing regions")
+	logger.Debugf("listing regions")
 	var regions []string
 	accountPath := filepath.Join(s.cacheDirectory, accountNumber)
 	fileInfos, err := os.ReadDir(accountPath)
@@ -59,7 +57,7 @@ func (s *state) accountRegionCacheExists(accountID, region string) bool {
 	if _, err := os.Stat(s.accountRegionCache(accountID, region)); err == nil {
 		return true
 	}
-	logger.Debug("cache does not exist for %s (%s)", accountID, region)
+	logger.Debugf("cache does not exist for %s (%s)", accountID, region)
 	return false
 }
 
@@ -93,21 +91,6 @@ func (s *state) accountRegionCacheServices(accountID, region string) ([]string, 
 	return services, nil
 }
 
-func (s *state) updateServices(services []string) {
-	s.stateLock.Lock()
-	defer s.stateLock.Unlock()
-	s.services = services
-
-	s.serviceWidth = getLongestName(services)
-	s.selectedService = ""
-}
-
-func (s *state) setSelected(selectedImage string) {
-	s.stateLock.Lock()
-	defer s.stateLock.Unlock()
-	s.selectedService = selectedImage
-}
-
 func (s *state) getServiceReport(accountID, region, serviceName string) (*output.Report, error) {
 	cachePath := s.accountRegionCache(accountID, region)
 
@@ -120,7 +103,7 @@ func (s *state) getServiceReport(accountID, region, serviceName string) (*output
 
 	var report output.Report
 	if err := json.Unmarshal(content, &report); err != nil {
-		logger.Error("failed to unmarshal report: %s", err)
+		logger.Errorf("failed to unmarshal report: %s", err)
 		return nil, err
 	}
 	report.Process()

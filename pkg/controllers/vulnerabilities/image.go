@@ -12,7 +12,7 @@ import (
 )
 
 func (c *Controller) SetSelected(selected string) {
-	logger.Debug("Setting selected image to %s", selected)
+	logger.Debugf("Setting selected image to %s", selected)
 	c.setSelected(strings.TrimSpace(selected))
 }
 
@@ -81,12 +81,12 @@ func (c *Controller) ScanAllImages(gui *gocui.Gui, _ *gocui.View) error {
 }
 
 func (c *Controller) RefreshImages() error {
-	logger.Debug("refreshing images")
+	logger.Debugf("refreshing images")
 	c.UpdateStatus("Refreshing images")
 	defer c.ClearStatus()
 
 	images := c.DockerClient.ListImages()
-	logger.Debug("found %d images", len(images))
+	logger.Debugf("found %d images", len(images))
 	c.updateImages(images)
 
 	if v, ok := c.Views[widgets.Images].(*widgets.ImagesWidget); ok {

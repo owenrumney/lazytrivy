@@ -71,7 +71,7 @@ func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
 			return nil
 		}
 		w.currentResult = w.results[id]
-		logger.Debug("Diving deeper into result: %s", w.currentResult.Target)
+		logger.Debugf("Diving deeper into result: %s", w.currentResult.Target)
 		w.GenerateFilteredReport("ALL")
 	case DetailsResultMode:
 		x, y, wi, h := w.v.Dimensions()

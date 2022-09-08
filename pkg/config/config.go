@@ -30,7 +30,6 @@ var defaultConfig *Config
 var configPath string
 
 func init() {
-
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		homeDir = os.TempDir()
@@ -58,24 +57,23 @@ func init() {
 	_ = os.MkdirAll(lazyTrivyConfigDir, os.ModePerm)
 
 	configPath = filepath.Join(lazyTrivyConfigDir, "config.yaml")
-
 }
 
 func Load() (*Config, error) {
-	logger.Debug("Attempting to load config from %s", configPath)
+	logger.Debugf("Attempting to load config from %s", configPath)
 	if _, err := os.Stat(configPath); err != nil {
-		logger.Debug("No config file found, using defaults")
+		logger.Debugf("No config file found, using defaults")
 		return defaultConfig, nil
 	}
 
 	content, err := os.ReadFile(configPath)
 	if err != nil {
-		logger.Error("Error reading config file: %s", err)
+		logger.Errorf("Error reading config file: %s", err)
 		return defaultConfig, nil
 	}
 
 	if err := yaml.Unmarshal(content, &defaultConfig); err != nil {
-		logger.Error("Error parsing config file: %s", err)
+		logger.Errorf("Error parsing config file: %s", err)
 		return defaultConfig, err
 	}
 
@@ -83,15 +81,15 @@ func Load() (*Config, error) {
 }
 
 func Save(config *Config) error {
-	logger.Debug("Saving the config to %s", configPath)
+	logger.Debugf("Saving the config to %s", configPath)
 	content, err := yaml.Marshal(config)
 	if err != nil {
-		logger.Error("Error marshalling config: %s", err)
+		logger.Errorf("Error marshalling config: %s", err)
 		return err
 	}
 
-	if err := os.WriteFile(configPath, content, 0644); err != nil {
-		logger.Error("Error writing config file: %s", err)
+	if err := os.WriteFile(configPath, content, 0600); err != nil {
+		logger.Errorf("Error writing config file: %s", err)
 		return err
 	}
 

@@ -51,10 +51,9 @@ func (w *ListWidget) nextItem(_ *gocui.Gui, v *gocui.View) error {
 	}
 	v.MoveCursor(0, 1)
 
-	_, h := v.Size()
 	_, oy := v.Origin()
 	_, y := v.Cursor()
-	if y == h {
+	if _, h := v.Size(); y == h {
 		if err := v.SetOrigin(0, oy+1); err != nil {
 			return err
 		}

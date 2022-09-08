@@ -9,7 +9,7 @@ import (
 )
 
 func (c *Controller) configureKeyBindings() error {
-	logger.Debug("Configuring global AWS Controller keyboard shortcuts")
+	logger.Debugf("Configuring global AWS Controller keyboard shortcuts")
 	if err := c.ConfigureGlobalKeyBindings(); err != nil {
 		return fmt.Errorf("error configuring global keybindings: %w", err)
 	}

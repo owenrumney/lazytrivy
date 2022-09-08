@@ -67,7 +67,7 @@ func (w *ResultsWidget) addFilteringKeyBinding(key rune, severity string) error 
 }
 
 func (w *ResultsWidget) addFilteringKeyBindings() error {
-	logger.Debug("adding filtering keybindings")
+	logger.Debugf("adding filtering keybindings")
 	if err := w.addFilteringKeyBinding('e', "ALL"); err != nil {
 		return err
 	}

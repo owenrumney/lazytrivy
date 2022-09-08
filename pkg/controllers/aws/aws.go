@@ -41,7 +41,7 @@ func NewAWSController(cui *gocui.Gui, dockerClient *docker.Client, cfg *config.C
 }
 
 func (c *Controller) Initialise() error {
-	logger.Debug("Initialising AWS controller")
+	logger.Debugf("Initialising AWS controller")
 	var outerErr error
 
 	c.Cui.Update(func(gui *gocui.Gui) error {
@@ -51,7 +51,7 @@ func (c *Controller) Initialise() error {
 			return err
 		}
 
-		logger.Debug("Configuring keyboard shortcuts")
+		logger.Debugf("Configuring keyboard shortcuts")
 		if err := c.configureKeyBindings(); err != nil {
 			return fmt.Errorf("failed to configure global keys: %w", err)
 		}
@@ -78,13 +78,13 @@ func (c *Controller) Initialise() error {
 }
 
 func (c *Controller) refreshServices() error {
-	logger.Debug("getting caches services")
+	logger.Debugf("getting caches services")
 	services, err := c.accountRegionCacheServices(c.Config.AWS.AccountNo, c.Config.AWS.Region)
 	if err != nil {
 		return err
 	}
 
-	logger.Debug("Updating the services view with the identified services")
+	logger.Debugf("Updating the services view with the identified services")
 	if v, ok := c.Views[widgets.Services].(*widgets.ServicesWidget); ok {
 		if err := v.RefreshServices(services, 20); err != nil {
 			return err
@@ -94,7 +94,7 @@ func (c *Controller) refreshServices() error {
 }
 
 func (c *Controller) CreateWidgets(manager base.Manager) error {
-	logger.Debug("Creating AWS view widgets")
+	logger.Debugf("Creating AWS view widgets")
 	menuItems := []string{
 		"<blue>[?]</blue> help", "s<blue>[w]</blue>itch mode", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
 		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
@@ -118,7 +118,7 @@ func (c *Controller) CreateWidgets(manager base.Manager) error {
 }
 
 func (c *Controller) UpdateAccount(account string) error {
-	logger.Debug("Updating the AWS account details in the config")
+	logger.Debugf("Updating the AWS account details in the config")
 	c.Config.AWS.AccountNo = account
 	c.Config.AWS.Region = "us-east-1"
 	if err := c.Config.Save(); err != nil {
@@ -129,7 +129,7 @@ func (c *Controller) UpdateAccount(account string) error {
 }
 
 func (c *Controller) UpdateRegion(region string) error {
-	logger.Debug("Updating the AWS region details in the config")
+	logger.Debugf("Updating the AWS region details in the config")
 	c.Config.AWS.Region = region
 	if err := c.Config.Save(); err != nil {
 		return err
@@ -140,7 +140,7 @@ func (c *Controller) UpdateRegion(region string) error {
 func (c *Controller) update() error {
 	if v, ok := c.Views[widgets.Account]; ok {
 		if a, ok := v.(*widgets.AccountWidget); ok {
-			logger.Debug("Updating the AWS account details in the UI")
+			logger.Debugf("Updating the AWS account details in the UI")
 			a.UpdateAccount(c.Config.AWS.AccountNo, c.Config.AWS.Region)
 			if err := c.refreshServices(); err != nil {
 				return err
@@ -180,10 +180,10 @@ func (c *Controller) moveViewRight(*gocui.Gui, *gocui.View) error {
 
 func (c *Controller) switchAccount(gui *gocui.Gui, _ *gocui.View) error {
 
-	logger.Debug("Switching AWS account")
+	logger.Debugf("Switching AWS account")
 	accounts, err := c.listAccountNumbers()
 	if err != nil {
-		logger.Error("Failed to list AWS accounts. %s", err)
+		logger.Errorf("Failed to list AWS accounts. %s", err)
 		return err
 	}
 
@@ -191,7 +191,7 @@ func (c *Controller) switchAccount(gui *gocui.Gui, _ *gocui.View) error {
 
 	accountChoices := widgets.NewChoiceWidget("choice", x/2-10, y/2-2, x/2+10, y/2+2, " Choose or ESC ", accounts, c.UpdateAccount, c)
 	if err := accountChoices.Layout(gui); err != nil {
-		logger.Error("Failed to create account choice widget. %s", err)
+		logger.Errorf("Failed to create account choice widget. %s", err)
 		return fmt.Errorf("error when rendering account choices: %w", err)
 	}
 	gui.Update(func(gui *gocui.Gui) error {
@@ -203,10 +203,10 @@ func (c *Controller) switchAccount(gui *gocui.Gui, _ *gocui.View) error {
 }
 
 func (c *Controller) switchRegion(gui *gocui.Gui, _ *gocui.View) error {
-	logger.Debug("Switching AWS region")
+	logger.Debugf("Switching AWS region")
 	regions, err := c.listRegions(c.Config.AWS.AccountNo)
 	if err != nil {
-		logger.Error("Failed to list AWS regions. %s", err)
+		logger.Errorf("Failed to list AWS regions. %s", err)
 		return err
 	}
 
@@ -214,7 +214,7 @@ func (c *Controller) switchRegion(gui *gocui.Gui, _ *gocui.View) error {
 	regionChoices := widgets.NewChoiceWidget("choice", x/2-10, y/2-2, x/2+10, y/2+len(regions), " Choose or ESC ", regions, c.UpdateRegion, c)
 
 	if err := regionChoices.Layout(gui); err != nil {
-		logger.Error("Failed to create region choice widget. %s", err)
+		logger.Errorf("Failed to create region choice widget. %s", err)
 		return fmt.Errorf("error when rendering region choices: %w", err)
 	}
 	gui.Update(func(gui *gocui.Gui) error {
@@ -227,7 +227,7 @@ func (c *Controller) switchRegion(gui *gocui.Gui, _ *gocui.View) error {
 
 func (c *Controller) discoverAccount(region string) (string, string, error) {
 	ctx := context.Background()
-	logger.Debug("Loading credentials from default config")
+	logger.Debugf("Loading credentials from default config")
 	cfg, err := awsConfig.LoadDefaultConfig(ctx)
 	if err != nil {
 		return "", "", err
@@ -239,21 +239,21 @@ func (c *Controller) discoverAccount(region string) (string, string, error) {
 	}
 
 	if regionEnv, ok := os.LookupEnv("AWS_REGION"); ok {
-		logger.Debug("Using AWS_REGION environment variable")
+		logger.Debugf("Using AWS_REGION environment variable")
 		cfg.Region = regionEnv
 	}
 
 	svc := sts.NewFromConfig(cfg)
 	result, err := svc.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
-		logger.Error("Error getting caller identity")
+		logger.Errorf("Error getting caller identity")
 		return "", "", fmt.Errorf("failed to discover AWS caller identity: %w", err)
 	}
 	if result.Account == nil {
 		return "", "", fmt.Errorf("missing account id for aws account")
 	}
 
-	logger.Debug("Discovered AWS account %s", *result.Account)
+	logger.Debugf("Discovered AWS account %s", *result.Account)
 	return *result.Account, cfg.Region, nil
 }
 
@@ -263,7 +263,7 @@ func (c *Controller) scanAccount(gui *gocui.Gui, _ *gocui.View) error {
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "failed to discover AWS caller identity") {
 			c.UpdateStatus("Failed to discover AWS credentials.")
-			logger.Error("failed to discover AWS credentials: %v", err)
+			logger.Errorf("failed to discover AWS credentials: %v", err)
 			return NewErrNoValidCredentials()
 		}
 		return err
@@ -272,7 +272,7 @@ func (c *Controller) scanAccount(gui *gocui.Gui, _ *gocui.View) error {
 	c.UpdateStatus("Checking credentials for account...")
 	if account != c.Config.AWS.AccountNo && c.Config.AWS.AccountNo != "" {
 		c.UpdateStatus("Account number does not match credentials.")
-		logger.Error("Account number does not match credentials.")
+		logger.Errorf("Account number does not match credentials.")
 		return fmt.Errorf("account number mismatch: %s != %s", account, c.Config.AWS.AccountNo)
 	}
 
@@ -293,7 +293,7 @@ func (c *Controller) scanAccount(gui *gocui.Gui, _ *gocui.View) error {
 
 		_, _ = gui.SetCurrentView(widgets.Results)
 		if err := c.refreshServices(); err != nil {
-			logger.Error("Error refreshing services: %v", err)
+			logger.Errorf("Error refreshing services: %v", err)
 		}
 		c.UpdateStatus("Account scan complete.")
 	}()

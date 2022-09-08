@@ -15,9 +15,8 @@ type ImagesWidget struct {
 	x, y int
 	w, h int
 
-	imageCount int
-	ctx        vulnerabilityContext
-	v          *gocui.View
+	ctx vulnerabilityContext
+	v   *gocui.View
 }
 
 func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
