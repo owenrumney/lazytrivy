@@ -148,10 +148,28 @@ func (w *ImageResultWidget) UpdateResultsTable(reports []*output.Report) {
 	w.v.Subtitle = ""
 }
 
-func (w *ImageResultWidget) RenderReport(report *output.Report, severity string) {
+func (w *ImageResultWidget) RenderReport(report *output.Report, severity string, cui *gocui.Gui) {
 	w.currentReport = report
 
+	if w.currentReport == nil || !w.currentReport.HasIssues() {
+		width, height := w.v.Size()
+
+		lines := []string{
+			"Great News!",
+			"",
+			"No vulnerabilities found!",
+		}
+
+		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, cui)
+		_ = announcement.Layout(cui)
+		_, _ = cui.SetCurrentView(Announcement)
+
+		return
+	}
+
 	w.GenerateFilteredReport(severity)
+
+	_, _ = cui.SetCurrentView(Results)
 }
 
 func (w *ImageResultWidget) GenerateFilteredReport(severity string) {

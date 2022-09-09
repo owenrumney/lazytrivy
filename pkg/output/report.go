@@ -175,3 +175,7 @@ func (r *Report) GetTotalVulnerabilities() int {
 func (r *Report) GetTotalMisconfigurations() int {
 	return r.misconfigurations
 }
+
+func (r *Report) HasIssues() bool {
+	return r.GetTotalVulnerabilities() > 0 || r.GetTotalMisconfigurations() > 0
+}

@@ -3,16 +3,17 @@ package widgets
 import "github.com/awesome-gocui/gocui"
 
 const (
-	Filter   = "filter"
-	Host     = "host"
-	Images   = "images"
-	Menu     = "menu"
-	Remote   = "remote"
-	Results  = "results"
-	Status   = "status"
-	Summary  = "summary"
-	Services = "services"
-	Account  = "account"
+	Account      = "account"
+	Announcement = "announcement"
+	Filter       = "filter"
+	Host         = "host"
+	Images       = "images"
+	Menu         = "menu"
+	Remote       = "remote"
+	Results      = "results"
+	Services     = "services"
+	Status       = "status"
+	Summary      = "summary"
 )
 
 type Widget interface {

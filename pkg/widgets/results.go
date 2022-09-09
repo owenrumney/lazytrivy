@@ -1,7 +1,6 @@
 package widgets
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -87,41 +86,6 @@ func (w *ResultsWidget) addFilteringKeyBindings() error {
 		return err
 	}
 
-	return nil
-}
-
-func (w *ResultsWidget) RenderReport(report *output.Report, severity string) {
-	w.currentReport = report
-
-	w.generateReportFunc(severity)
-}
-
-func (w *ResultsWidget) UpdateResultsTable(reports []*output.Report) {
-	w.updateResultsTableFunc(reports)
-}
-
-func (w *ResultsWidget) layout(g *gocui.Gui, x int, y int, wi int, h int) error {
-
-	v, err := g.View(w.name)
-	if err != nil {
-		v, err = g.SetView(w.name, x, y, wi, h, 0)
-		if err != nil {
-			if !errors.Is(err, gocui.ErrUnknownView) {
-				return fmt.Errorf("%w", err)
-			}
-		}
-	}
-
-	w.v = v
-	v.Title = " Results "
-	v.Highlight = true
-	v.SelBgColor = gocui.ColorGreen
-	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
-	if g.CurrentView() == v {
-		v.FrameColor = gocui.ColorGreen
-	} else {
-		v.FrameColor = gocui.ColorDefault
-	}
 	return nil
 }
 

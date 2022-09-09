@@ -20,7 +20,7 @@ func help(gui *gocui.Gui, _ *gocui.View) error {
 
 	w, h := gui.Size()
 
-	v := widgets.NewHelpWidget("help", w/2-22, h/2-4, w/2+23, h/2+3, helpCommands)
+	v := widgets.NewAnnouncementWidget("help", "Help", w, h, helpCommands, gui)
 
 	if err := gui.SetKeybinding("help", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
 		if _, err := gui.SetCurrentView("services"); err != nil {

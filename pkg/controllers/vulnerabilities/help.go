@@ -19,16 +19,7 @@ func help(gui *gocui.Gui, _ *gocui.View) error {
 
 	w, h := gui.Size()
 
-	v := widgets.NewHelpWidget("help", w/2-22, h/2-4, w/2+22, h/2+4, helpCommands)
-
-	if err := gui.SetKeybinding("help", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
-		if _, err := gui.SetCurrentView("images"); err != nil {
-			return err
-		}
-		return gui.DeleteView("help")
-	}); err != nil {
-		return err
-	}
+	v := widgets.NewAnnouncementWidget("help", "Help", w, h, helpCommands, gui)
 
 	gui.Update(func(g *gocui.Gui) error {
 		if err := v.Layout(g); err != nil {
