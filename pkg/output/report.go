@@ -102,7 +102,7 @@ func (r *Report) Process() {
 				}
 			}
 			if found {
-				r.vulnerabilities++
+
 				foundResult.Vulnerabilities = append(foundResult.Vulnerabilities, v)
 			} else {
 				foundResult = &Result{
@@ -111,6 +111,7 @@ func (r *Report) Process() {
 				}
 				sevMap = append(sevMap, foundResult)
 			}
+			r.vulnerabilities++
 
 			r.SeverityMap[v.Severity] = sevMap
 			r.SeverityCount[v.Severity]++
@@ -132,7 +133,7 @@ func (r *Report) Process() {
 				}
 			}
 			if found {
-				r.misconfigurations++
+
 				foundResult.Misconfigurations = append(foundResult.Misconfigurations, m)
 			} else {
 				foundResult = &Result{
@@ -141,6 +142,7 @@ func (r *Report) Process() {
 				}
 				sevMap = append(sevMap, foundResult)
 			}
+			r.misconfigurations++
 
 			r.SeverityMap[m.Severity] = sevMap
 			r.SeverityCount[m.Severity]++

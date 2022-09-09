@@ -38,7 +38,7 @@ func NewServicesWidget(name string, g awsContext) *ServicesWidget {
 	return widget
 }
 
-func (w *ServicesWidget) ConfigureKeys() error {
+func (w *ServicesWidget) ConfigureKeys(*gocui.Gui) error {
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.previousItem); err != nil {
 		return fmt.Errorf("failed to set the previous image %w", err)
 	}

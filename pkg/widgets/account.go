@@ -32,7 +32,7 @@ func NewAccountWidget(name, accountNumber, region string) *AccountWidget {
 	}
 }
 
-func (w *AccountWidget) ConfigureKeys() error {
+func (w *AccountWidget) ConfigureKeys(*gocui.Gui) error {
 	// nothing to configure here
 	return nil
 }

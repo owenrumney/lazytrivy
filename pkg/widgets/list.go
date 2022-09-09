@@ -73,6 +73,10 @@ func (w *ListWidget) nextItem(_ *gocui.Gui, v *gocui.View) error {
 }
 
 func (w *ListWidget) CurrentItemPosition() int {
+	if len(w.body) == 0 {
+		return -1
+	}
+
 	currentLine := w.body[w.currentPos]
 	if strings.HasPrefix(currentLine, "**") {
 		idString := strings.TrimPrefix(strings.Split(currentLine, "***")[0], "**")

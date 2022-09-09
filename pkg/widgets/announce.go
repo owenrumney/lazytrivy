@@ -53,7 +53,7 @@ func NewAnnouncementWidget(name, title string, width, height int, lines []string
 	}
 }
 
-func (w *AnnouncementWidget) ConfigureKeys() error {
+func (w *AnnouncementWidget) ConfigureKeys(*gocui.Gui) error {
 	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
 		if _, err := gui.SetCurrentView(Results); err != nil {
 			return err
@@ -88,5 +88,5 @@ func (w *AnnouncementWidget) Layout(g *gocui.Gui) error {
 	v.FrameColor = gocui.ColorGreen
 	w.v = v
 
-	return w.ConfigureKeys()
+	return w.ConfigureKeys(nil)
 }

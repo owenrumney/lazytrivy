@@ -34,7 +34,7 @@ func NewHostWidget(name string, ctx vulnerabilityContext) *HostWidget {
 	}
 }
 
-func (w *HostWidget) ConfigureKeys() error {
+func (w *HostWidget) ConfigureKeys(*gocui.Gui) error {
 	// nothing to configure here
 	return nil
 }

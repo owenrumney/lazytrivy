@@ -17,7 +17,7 @@ const (
 )
 
 type Widget interface {
-	ConfigureKeys() error
+	ConfigureKeys(*gocui.Gui) error
 	Layout(*gocui.Gui) error
 	RefreshView()
 }

@@ -28,7 +28,7 @@ func NewStatusWidget(name string) *StatusWidget {
 	}
 }
 
-func (w *StatusWidget) ConfigureKeys() error {
+func (w *StatusWidget) ConfigureKeys(*gocui.Gui) error {
 	return nil
 }
 

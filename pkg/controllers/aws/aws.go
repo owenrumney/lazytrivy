@@ -57,7 +57,7 @@ func (c *Controller) Initialise() error {
 		}
 
 		for _, v := range c.Views {
-			if err := v.ConfigureKeys(); err != nil {
+			if err := v.ConfigureKeys(gui); err != nil {
 				return fmt.Errorf("failed to configure view keys: %w", err)
 			}
 		}
@@ -313,8 +313,8 @@ func (c *Controller) RenderAWSResultsReport(report *output.Report) error {
 
 func (c *Controller) RenderAWSResultsReportSummary(report *output.Report) error {
 	if v, ok := c.Views[widgets.Results].(*widgets.AWSResultWidget); ok {
-		v.UpdateResultsTable([]*output.Report{report})
-		_, _ = c.Cui.SetCurrentView(widgets.Results)
+		v.UpdateResultsTable([]*output.Report{report}, c.Cui)
+
 	}
 	return fmt.Errorf("failed to render results report summary") //nolint:goerr113
 }
