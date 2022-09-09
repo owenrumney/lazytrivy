@@ -38,7 +38,7 @@ func NewAWSResultWidget(name string, g awsContext) *AWSResultWidget {
 	return widget
 }
 
-func (w *AWSResultWidget) ConfigureKeys() error {
+func (w *AWSResultWidget) ConfigureKeys(gui *gocui.Gui) error {
 	if err := w.configureListWidgetKeys(w.name); err != nil {
 		return err
 	}
@@ -49,14 +49,14 @@ func (w *AWSResultWidget) ConfigureKeys() error {
 
 	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 		if w.results != nil && len(w.results) > 0 {
-			w.UpdateResultsTable([]*output.Report{w.currentReport})
+			w.UpdateResultsTable([]*output.Report{w.currentReport}, g)
 		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
-	if err := w.addFilteringKeyBindings(); err != nil {
+	if err := w.addFilteringKeyBindings(gui); err != nil {
 		return err
 	}
 
@@ -71,8 +71,8 @@ func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
 			return nil
 		}
 		w.currentResult = w.results[id]
-		logger.Debug("Diving deeper into result: %s", w.currentResult.Target)
-		w.GenerateFilteredReport("ALL")
+		logger.Debugf("Diving deeper into result: %s", w.currentResult.Target)
+		w.GenerateFilteredReport("ALL", g)
 	case DetailsResultMode:
 		x, y, wi, h := w.v.Dimensions()
 
@@ -137,12 +137,32 @@ func (w *AWSResultWidget) Reset() {
 	}
 }
 
-func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report) {
+func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.Gui) {
 	if len(reports) == 0 {
 		return
 	}
+
 	w.mode = SummaryResultMode
 	w.currentReport = reports[0]
+	w.currentReport.Process()
+	w.v.Clear()
+	w.body = []string{}
+
+	if w.currentReport == nil || !w.currentReport.HasIssues() {
+		width, height := w.v.Size()
+
+		lines := []string{
+			"Great News!",
+			"",
+			"No misconfigurations found!",
+		}
+
+		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, g)
+		_ = announcement.Layout(g)
+		_, _ = g.SetCurrentView(Announcement)
+
+		return
+	}
 
 	width, _ := w.v.Size()
 
@@ -180,6 +200,7 @@ func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report) {
 
 	w.body = bodyContent
 
+	_, _ = g.SetCurrentView(Results)
 	w.ctx.RefreshView(w.name)
 
 	w.SetStartPosition(3)
@@ -190,11 +211,23 @@ func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report) {
 func (w *AWSResultWidget) RenderReport(report *output.Report, severity string) {
 	w.currentReport = report
 
-	w.GenerateFilteredReport(severity)
+	w.GenerateFilteredReport(severity, nil)
 }
 
-func (w *AWSResultWidget) GenerateFilteredReport(severity string) {
+func (w *AWSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) {
 	if w.currentResult == nil || len(w.currentResult.Misconfigurations) == 0 {
+		width, height := w.v.Size()
+
+		lines := []string{
+			"Great News!",
+			"",
+			"No misconfigurations found!",
+		}
+
+		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, g)
+		_ = announcement.Layout(g)
+		_, _ = g.SetCurrentView(Announcement)
+
 		return
 	}
 

@@ -15,9 +15,8 @@ type ImagesWidget struct {
 	x, y int
 	w, h int
 
-	imageCount int
-	ctx        vulnerabilityContext
-	v          *gocui.View
+	ctx vulnerabilityContext
+	v   *gocui.View
 }
 
 func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
@@ -39,7 +38,7 @@ func NewImagesWidget(name string, g vulnerabilityContext) *ImagesWidget {
 	return widget
 }
 
-func (w *ImagesWidget) ConfigureKeys() error {
+func (w *ImagesWidget) ConfigureKeys(*gocui.Gui) error {
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.previousItem); err != nil {
 		return fmt.Errorf("failed to set the previous image %w", err)
 	}

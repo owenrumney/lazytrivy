@@ -68,10 +68,10 @@ type Misconfiguration struct {
 }
 
 func FromJSON(imageName string, content string) (*Report, error) {
-	logger.Debug("Parsing JSON report")
+	logger.Debugf("Parsing JSON report")
 	var report Report
 	if err := json.Unmarshal([]byte(content), &report); err != nil {
-		logger.Error("Failed to parse JSON report. %s", err)
+		logger.Errorf("Failed to parse JSON report. %s", err)
 		return nil, err
 	}
 	report.Process()
@@ -102,7 +102,7 @@ func (r *Report) Process() {
 				}
 			}
 			if found {
-				r.vulnerabilities++
+
 				foundResult.Vulnerabilities = append(foundResult.Vulnerabilities, v)
 			} else {
 				foundResult = &Result{
@@ -111,6 +111,7 @@ func (r *Report) Process() {
 				}
 				sevMap = append(sevMap, foundResult)
 			}
+			r.vulnerabilities++
 
 			r.SeverityMap[v.Severity] = sevMap
 			r.SeverityCount[v.Severity]++
@@ -132,7 +133,7 @@ func (r *Report) Process() {
 				}
 			}
 			if found {
-				r.misconfigurations++
+
 				foundResult.Misconfigurations = append(foundResult.Misconfigurations, m)
 			} else {
 				foundResult = &Result{
@@ -141,6 +142,7 @@ func (r *Report) Process() {
 				}
 				sevMap = append(sevMap, foundResult)
 			}
+			r.misconfigurations++
 
 			r.SeverityMap[m.Severity] = sevMap
 			r.SeverityCount[m.Severity]++
@@ -174,4 +176,8 @@ func (r *Report) GetTotalVulnerabilities() int {
 
 func (r *Report) GetTotalMisconfigurations() int {
 	return r.misconfigurations
+}
+
+func (r *Report) HasIssues() bool {
+	return r.GetTotalVulnerabilities() > 0 || r.GetTotalMisconfigurations() > 0
 }

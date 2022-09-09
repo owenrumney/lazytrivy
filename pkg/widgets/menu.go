@@ -34,7 +34,7 @@ func NewMenuWidget(name string, x, y, w, h int, menuItems []string) *MenuWidget 
 	}
 }
 
-func (w *MenuWidget) ConfigureKeys() error {
+func (w *MenuWidget) ConfigureKeys(*gocui.Gui) error {
 	// nothing to configure here
 	return nil
 }

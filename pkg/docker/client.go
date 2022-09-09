@@ -32,7 +32,7 @@ type Client struct {
 }
 
 func NewClient() *Client {
-	logger.Debug("Creating docker client")
+	logger.Debugf("Creating docker client")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
@@ -58,7 +58,7 @@ func (c *Client) ListImages() []string {
 		if image.RepoTags != nil {
 			imageName := image.RepoTags[0]
 			if strings.HasPrefix(imageName, "lazytrivy:") {
-				logger.Debug("Found trivy image %s", imageName)
+				logger.Debugf("Found trivy image %s", imageName)
 				c.trivyImagePresent = true
 
 				continue
@@ -70,7 +70,7 @@ func (c *Client) ListImages() []string {
 	sort.Strings(imageNames)
 	c.imageNames = imageNames
 
-	logger.Debug("Found %d images", len(imageNames))
+	logger.Debugf("Found %d images", len(imageNames))
 	return c.imageNames
 }
 
@@ -102,18 +102,18 @@ func (c *Client) ScanService(ctx context.Context, serviceName string, accountNo,
 	}
 
 	if serviceName != "" {
-		logger.Debug("Scan will target service %s", serviceName)
+		logger.Debugf("Scan will target service %s", serviceName)
 		command = append(command, "--services", serviceName)
 	}
 	if updateCache {
-		logger.Debug("Cache will be updated for %s", serviceName)
+		logger.Debugf("Cache will be updated for %s", serviceName)
 		command = append(command, "--update-cache")
 	}
 	return c.scan(ctx, command, target, env, progress)
 }
 
 func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progress) (*output.Report, error) {
-	logger.Debug("Scanning image %s", imageName)
+	logger.Debugf("Scanning image %s", imageName)
 	progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
 	command := []string{"image", "-f=json", imageName}
 
@@ -122,44 +122,18 @@ func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progr
 
 func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress) (*output.Report, error) {
 	if !c.trivyImagePresent {
-		logger.Debug("Creating the docker image, it isn't present")
-
-		dockerfile := createDockerFile()
-		tempDir, err := os.MkdirTemp("", "lazytrivy")
-		dockerFilePath := filepath.Join(tempDir, "Dockerfile")
-
-		defer func() { _ = os.RemoveAll(tempDir) }()
-
-		if err := os.WriteFile(dockerFilePath, []byte(dockerfile), 0644); err != nil {
-			return nil, err
-		}
-
-		tar, err := archive.TarWithOptions(tempDir, &archive.TarOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err := c.client.ImageBuild(ctx, tar, types.ImageBuildOptions{
-			PullParent: true,
-			Dockerfile: "Dockerfile",
-			Tags:       []string{"lazytrivy:latest"},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		_, _ = io.Copy(io.Discard, resp.Body)
-		if err := resp.Body.Close(); err != nil {
-			return nil, err
+		report, err2 := c.buildScannerImage(ctx)
+		if err2 != nil {
+			return report, err2
 		}
 
 	}
 
-	logger.Debug("Running trivy scan with command %s", command)
+	logger.Debugf("Running trivy scan with command %s", command)
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		logger.Debug("Error getting user home dir: %s", err)
+		logger.Debugf("Error getting user home dir: %s", err)
 		userHomeDir = os.TempDir()
 	}
 
@@ -186,7 +160,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 
 	//  make sure we kill the container
 	defer func() {
-		logger.Debug("Removing container %s", cont.ID)
+		logger.Debugf("Removing container %s", cont.ID)
 		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
 	}()
 
@@ -230,23 +204,57 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	}
 }
 
+func (c *Client) buildScannerImage(ctx context.Context) (*output.Report, error) {
+	logger.Debugf("Creating the docker image, it isn't present")
+
+	dockerfile := createDockerFile()
+	tempDir, err := os.MkdirTemp("", "lazytrivy")
+	dockerFilePath := filepath.Join(tempDir, "Dockerfile")
+
+	defer func() { _ = os.RemoveAll(tempDir) }()
+
+	if err := os.WriteFile(dockerFilePath, []byte(dockerfile), 0644); err != nil {
+		return nil, err
+	}
+
+	tar, err := archive.TarWithOptions(tempDir, &archive.TarOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.client.ImageBuild(ctx, tar, types.ImageBuildOptions{
+		PullParent: true,
+		Dockerfile: "Dockerfile",
+		Tags:       []string{"lazytrivy:latest"},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	_, _ = io.Copy(io.Discard, resp.Body)
+	if err := resp.Body.Close(); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 func (c *Client) ScanAllImages(ctx context.Context, progress Progress) ([]*output.Report, error) {
 	var reports []*output.Report // nolint
 
 	for _, imageName := range c.imageNames {
 		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
-		logger.Debug("Scanning image %s", imageName)
+		logger.Debugf("Scanning image %s", imageName)
 
 		report, err := c.ScanImage(ctx, imageName, progress)
 		if err != nil {
 			return nil, err
 		}
 		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...done", imageName))
-		logger.Debug("Scanning image %s...done", imageName)
+		logger.Debugf("Scanning image %s...done", imageName)
 		reports = append(reports, report)
 		select {
 		case <-ctx.Done():
-			logger.Debug("Context cancelled")
+			logger.Debugf("Context cancelled")
 			return nil, ctx.Err() // nolint
 		default:
 		}

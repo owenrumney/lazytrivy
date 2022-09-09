@@ -43,7 +43,7 @@ func NewChoiceWidget(name string, x, y, w, h int, title string, choices []string
 	}
 }
 
-func (w *ChoiceWidget) ConfigureKeys() error {
+func (w *ChoiceWidget) ConfigureKeys(*gocui.Gui) error {
 	if err := w.configureListWidgetKeys(w.name); err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (w *ChoiceWidget) Layout(g *gocui.Gui) error {
 
 		w.SetStartPosition(0)
 		w.v = v
-		if err := w.ConfigureKeys(); err != nil {
+		if err := w.ConfigureKeys(nil); err != nil {
 			return err
 		}
 

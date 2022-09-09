@@ -50,7 +50,7 @@ func (c *Controller) CancelCurrentScan(_ *gocui.Gui, _ *gocui.View) error {
 	c.Lock()
 	defer c.Unlock()
 	if c.ActiveCancel != nil {
-		logger.Debug("Cancelling current scan")
+		logger.Debugf("Cancelling current scan")
 		c.UpdateStatus("Current scan cancelled.")
 		c.ActiveCancel()
 		c.ActiveCancel = nil

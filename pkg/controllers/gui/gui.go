@@ -26,7 +26,7 @@ type Controller struct {
 }
 
 func New() (*Controller, error) {
-	logger.Debug("Creating GUI")
+	logger.Debugf("Creating GUI")
 	cui, err := gocui.NewGui(gocui.OutputNormal, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gui: %w", err)

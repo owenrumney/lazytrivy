@@ -35,7 +35,7 @@ func NewImageResultWidget(name string, g vulnerabilityContext) *ImageResultWidge
 	return widget
 }
 
-func (w *ImageResultWidget) ConfigureKeys() error {
+func (w *ImageResultWidget) ConfigureKeys(g *gocui.Gui) error {
 	if err := w.configureListWidgetKeys(w.name); err != nil {
 		return err
 	}
@@ -50,14 +50,14 @@ func (w *ImageResultWidget) ConfigureKeys() error {
 
 	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 		if w.reports != nil && len(w.reports) > 0 {
-			w.UpdateResultsTable(w.reports)
+			w.UpdateResultsTable(w.reports, g)
 		}
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to set keybinding: %w", err)
 	}
 
-	if err := w.addFilteringKeyBindings(); err != nil {
+	if err := w.addFilteringKeyBindings(nil); err != nil {
 		return err
 	}
 
@@ -74,7 +74,7 @@ func (w *ImageResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 			return nil
 		}
 
-		w.GenerateFilteredReport("ALL")
+		w.GenerateFilteredReport("ALL", g)
 	case DetailsResultMode:
 		x, y, wi, h := v.Dimensions()
 
@@ -105,7 +105,7 @@ func (w *ImageResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (w *ImageResultWidget) UpdateResultsTable(reports []*output.Report) {
+func (w *ImageResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.Gui) {
 	w.mode = SummaryResultMode
 	w.reports = reports
 
@@ -148,13 +148,33 @@ func (w *ImageResultWidget) UpdateResultsTable(reports []*output.Report) {
 	w.v.Subtitle = ""
 }
 
-func (w *ImageResultWidget) RenderReport(report *output.Report, severity string) {
+func (w *ImageResultWidget) RenderReport(report *output.Report, severity string, cui *gocui.Gui) {
 	w.currentReport = report
+	w.v.Clear()
+	w.body = []string{}
 
-	w.GenerateFilteredReport(severity)
+	if w.currentReport == nil || !w.currentReport.HasIssues() {
+		width, height := w.v.Size()
+
+		lines := []string{
+			"Great News!",
+			"",
+			"No vulnerabilities found!",
+		}
+
+		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, cui)
+		_ = announcement.Layout(cui)
+		_, _ = cui.SetCurrentView(Announcement)
+
+		return
+	}
+
+	w.GenerateFilteredReport(severity, cui)
+
+	_, _ = cui.SetCurrentView(Results)
 }
 
-func (w *ImageResultWidget) GenerateFilteredReport(severity string) {
+func (w *ImageResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) {
 	if w.currentReport == nil {
 		return
 	}
