@@ -11,7 +11,7 @@ import (
 type Config struct {
 	AWS            AWSConfig
 	Vulnerability  VulnerabilityConfig
-	CacheDirectory string
+	CacheDirectory string `json:"-"`
 	Debug          bool
 }
 
@@ -39,7 +39,7 @@ func init() {
 
 	defaultConfig = &Config{
 		CacheDirectory: trivyCacheDir,
-		Debug:          true,
+		Debug:          false,
 		AWS: AWSConfig{
 			CacheDirectory: awsCacheDir,
 		},
