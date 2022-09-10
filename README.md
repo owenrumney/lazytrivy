@@ -14,13 +14,37 @@ lazydocker, lazynpm, lazygit)
 
 ## Installation
 
+### Prerequisites
+
+In order for lazytrivy to be cross-platform, it uses the Trivy docker image. This means that you will need to have Docker running on your machine for lazytrivy to work.
+
+#### Install with Go
+
 The quickest way to install if you have `Go` installed is to get the latest with `go install`
 
 ```bash
 go install github.com/owenrumney/lazytrivy@latest
 ```
 
+#### Download from Releases
+
 Alternatively, you can get the latest releases from [GitHub](https://github.com/owenrumney/lazytrivy)
+
+### Config
+
+A config file can be added to `~/.config/lazytrivy/config.yml` to set default options.
+
+```yaml
+aws:
+    accountno: "1234567890981"
+    region: eu-west-1
+vulnerability:
+    ignoreunfixed: false
+cachedirectory: /home/owen/.cache/trivy
+debug: false
+```
+
+By setting `debug` to true, additional logs will be generated in `/tmp/lazytrivy.log`
 
 ## Usage
 

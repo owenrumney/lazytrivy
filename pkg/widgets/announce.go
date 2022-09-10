@@ -88,5 +88,5 @@ func (w *AnnouncementWidget) Layout(g *gocui.Gui) error {
 	v.FrameColor = gocui.ColorGreen
 	w.v = v
 
-	return w.ConfigureKeys(nil)
+	return w.ConfigureKeys(g)
 }
