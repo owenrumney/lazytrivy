@@ -40,6 +40,26 @@ func NewAWSController(cui *gocui.Gui, dockerClient *docker.Client, cfg *config.C
 	}
 }
 
+func (c *Controller) CreateWidgets(manager base.Manager) error {
+	logger.Debugf("Creating AWS view widgets")
+
+	maxX, maxY := c.Cui.Size()
+	c.Views[widgets.Services] = widgets.NewServicesWidget(widgets.Services, c)
+	c.Views[widgets.Results] = widgets.NewAWSResultWidget(widgets.Results, c)
+	c.Views[widgets.Menu] = widgets.NewMenuWidget(widgets.Menu, 0, maxY-3, maxX-1, maxY-1)
+	c.Views[widgets.Status] = widgets.NewStatusWidget(widgets.Status)
+	c.Views[widgets.Account] = widgets.NewAccountWidget(widgets.Account, c.Config.AWS.AccountNo, c.Config.AWS.Region)
+
+	for _, v := range c.Views {
+		_ = v.Layout(c.Cui)
+		manager.AddViews(v)
+	}
+	manager.AddViews(gocui.ManagerFunc(c.LayoutFunc))
+	c.SetManager()
+
+	return nil
+}
+
 func (c *Controller) Initialise() error {
 	logger.Debugf("Initialising AWS controller")
 	var outerErr error
@@ -90,30 +110,6 @@ func (c *Controller) refreshServices() error {
 			return err
 		}
 	}
-	return nil
-}
-
-func (c *Controller) CreateWidgets(manager base.Manager) error {
-	logger.Debugf("Creating AWS view widgets")
-	menuItems := []string{
-		"<blue>[?]</blue> help", "s<blue>[w]</blue>itch mode", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
-		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
-	}
-
-	maxX, maxY := c.Cui.Size()
-	c.Views[widgets.Services] = widgets.NewServicesWidget(widgets.Services, c)
-	c.Views[widgets.Results] = widgets.NewAWSResultWidget(widgets.Results, c)
-	c.Views[widgets.Menu] = widgets.NewMenuWidget(widgets.Menu, 0, maxY-3, maxX-1, maxY-1, menuItems)
-	c.Views[widgets.Status] = widgets.NewStatusWidget(widgets.Status)
-	c.Views[widgets.Account] = widgets.NewAccountWidget(widgets.Account, c.Config.AWS.AccountNo, c.Config.AWS.Region)
-
-	for _, v := range c.Views {
-		_ = v.Layout(c.Cui)
-		manager.AddViews(v)
-	}
-	manager.AddViews(gocui.ManagerFunc(c.LayoutFunc))
-	c.SetManager()
-
 	return nil
 }
 
@@ -189,7 +185,7 @@ func (c *Controller) switchAccount(gui *gocui.Gui, _ *gocui.View) error {
 
 	x, y := gui.Size()
 
-	accountChoices := widgets.NewChoiceWidget("choice", x/2-10, y/2-2, x/2+10, y/2+2, " Choose or ESC ", accounts, c.UpdateAccount, c)
+	accountChoices := widgets.NewChoiceWidget("choice", x, y, " Choose or ESC ", accounts, c.UpdateAccount, c)
 	if err := accountChoices.Layout(gui); err != nil {
 		logger.Errorf("Failed to create account choice widget. %s", err)
 		return fmt.Errorf("error when rendering account choices: %w", err)
@@ -211,7 +207,7 @@ func (c *Controller) switchRegion(gui *gocui.Gui, _ *gocui.View) error {
 	}
 
 	x, y := gui.Size()
-	regionChoices := widgets.NewChoiceWidget("choice", x/2-10, y/2-2, x/2+10, y/2+len(regions), " Choose or ESC ", regions, c.UpdateRegion, c)
+	regionChoices := widgets.NewChoiceWidget("choice", x, y, " Choose or ESC ", regions, c.UpdateRegion, c)
 
 	if err := regionChoices.Layout(gui); err != nil {
 		logger.Errorf("Failed to create region choice widget. %s", err)

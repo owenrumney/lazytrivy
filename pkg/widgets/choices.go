@@ -14,7 +14,7 @@ type ChoiceWidget struct {
 	w, h         int
 	title        string
 	body         []string
-	ctx          awsContext
+	ctx          baseContext
 	v            *gocui.View
 	updateAction func(string) error
 }
@@ -23,8 +23,24 @@ func (w *ChoiceWidget) RefreshView() {
 	panic("unimplemented")
 }
 
-func NewChoiceWidget(name string, x, y, w, h int, title string, choices []string, updateAction func(string) error, ctx awsContext) *ChoiceWidget {
-	// TODO change the constructor to accept a parent size and calculate the size of the view
+func NewChoiceWidget(name string, width, height int, title string, choices []string, updateAction func(string) error, ctx baseContext) *ChoiceWidget {
+	maxLength := 0
+
+	for _, item := range choices {
+		if len(item) > maxLength {
+			maxLength = len(item)
+		}
+	}
+
+	maxLength += 2
+	maxHeight := len(choices) + 2
+
+	x := width/2 - maxLength/2
+	w := width/2 + maxLength/2
+
+	y := height/2 - maxHeight/2
+	h := height/2 + maxHeight/2
+
 	return &ChoiceWidget{
 		ListWidget: ListWidget{
 			ctx:        ctx,

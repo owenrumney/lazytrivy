@@ -1,7 +1,6 @@
 package widgets
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,30 +11,15 @@ import (
 )
 
 type SummaryWidget struct {
-	name string
-	x, y int
-	w, h int
-	vuln output.Vulnerability
+	name  string
+	x, y  int
+	w, h  int
+	issue output.Issue
 }
 
-func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vulnerability output.Vulnerability) (*SummaryWidget, error) {
+func NewSummaryWidget(name string, x, y, w, h int, ctx baseContext, issue output.Issue, selectFunc func(gui *gocui.Gui) error) (*SummaryWidget, error) {
 	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if len(view.BufferLines()) > 0 {
-			if image, _ := view.Line(0); image != "" {
-				ctx.ScanImage(context.Background(), image)
-			}
-		}
-		gui.Mouse = true
-		gui.Cursor = false
-
-		if err := gui.DeleteView(Remote); err != nil {
-			return fmt.Errorf("failed to delete view 'remote': %w", err)
-		}
-		if _, err := gui.SetCurrentView(Results); err != nil {
-			return fmt.Errorf("failed to switch view to 'results': %w", err)
-		}
-
-		return nil
+		return selectFunc(gui)
 	}); err != nil {
 		return nil, fmt.Errorf("%w", err)
 	}
@@ -85,28 +69,124 @@ func NewSummaryWidget(name string, x, y, w, h int, ctx vulnerabilityContext, vul
 		return nil, fmt.Errorf("%w", err)
 	}
 
-	return &SummaryWidget{name: name, x: x, y: y, w: w, h: h, vuln: vulnerability}, nil
+	return &SummaryWidget{name: name, x: x, y: y, w: w, h: h, issue: issue}, nil
 }
 
 func (i *SummaryWidget) Layout(g *gocui.Gui) error {
-	vulnerability := i.vuln
+	if i.issue == nil {
+		return fmt.Errorf("no issue to display")
+	}
+
+	switch i.issue.GetType() {
+	case output.IssueTypeVulnerability:
+		return i.layoutVulnerability(g)
+	case output.IssueTypeMisconfiguration:
+		return i.layoutMisconfiguration(g)
+	case output.IssueTypeSecret:
+		return i.layoutSecret(g)
+	}
+
+	return nil
+}
+
+func (i *SummaryWidget) layoutSecret(g *gocui.Gui) error {
+	secret := i.issue
 	var lines []string
 
-	lines = printMultiline(vulnerability.Title, "Title", lines, i.w-i.x-20)
-	lines = printMultiline(vulnerability.Title, "Description", lines, i.w-i.x-20)
-	lines = printSingleLine(vulnerability.VulnerabilityID, "Vulnerability ID", lines)
+	lines = printMultiline(secret.GetTitle(), "Title", lines, i.w-i.x-20)
+	lines = printMultiline(secret.GetDescription(), "Description", lines, i.w-i.x-20)
+	lines = printSingleLine(secret.GetSeverity(), "Severity", lines)
+	lines = printSingleLine(secret.GetID(), "Misconfiguration ID", lines)
+	lines = printSingleLine(secret.GetMatch(), "Match", lines)
+	lines = printSingleLine(secret.GetDeleted(), "Deleted?", lines)
 
-	if vulnerability.DataSource != nil && vulnerability.DataSource.Name != "" {
-		lines = append(lines, tml.Sprintf("<green> DataSource:</green>\n   %s\n", vulnerability.DataSource.Name))
+	v, err := g.SetView(i.name, i.x, i.y, i.w, i.h, 0)
+	if err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("failed to create view: %w", err)
+		}
 	}
-	lines = printSingleLine(vulnerability.Severity, "Severity", lines)
-	lines = printSingleLine(vulnerability.SeveritySource, "Severity Source", lines)
-	lines = printSingleLine(vulnerability.PkgName, "Package Name", lines)
-	lines = printSingleLine(vulnerability.PkgPath, "Package Path", lines)
-	lines = printSingleLine(vulnerability.InstalledVersion, "Installed Version", lines)
-	lines = printSingleLine(vulnerability.FixedVersion, "Fixed Version", lines)
-	if vulnerability.CVSS != nil {
-		for cvss, vals := range vulnerability.CVSS {
+
+	_, _ = fmt.Fprintln(v, strings.Join(lines, "\n"))
+	v.Title = fmt.Sprintf(" Summary for %s ", secret.GetID())
+	v.Subtitle = " Escape or 'q' to close "
+	v.Wrap = true
+	v.TitleColor = gocui.ColorGreen
+	v.FrameColor = gocui.ColorGreen
+	return nil
+}
+
+func (i *SummaryWidget) layoutMisconfiguration(g *gocui.Gui) error {
+	misconfig := i.issue
+	var lines []string
+	cause := misconfig.GetCauseMetadata()
+
+	lines = printMultiline(misconfig.GetTitle(), "Title", lines, i.w-i.x-20)
+	lines = printMultiline(misconfig.GetDescription(), "Description", lines, i.w-i.x-20)
+	if cause.Resource != "" {
+		lines = printSingleLine(cause.Resource, "Resource", lines)
+	}
+	lines = printSingleLine(misconfig.GetSeverity(), "Severity", lines)
+	lines = printMultiline(misconfig.GetMessage(), "Message", lines, i.w-i.x-20)
+	lines = printMultiline(misconfig.GetResolution(), "Resolution", lines, i.w-i.x-20)
+	lines = printSingleLine(misconfig.GetID(), "Misconfiguration ID", lines)
+
+	if len(misconfig.GetReferences()) > 0 {
+		lines = append(lines, tml.Sprintf("<green> References:</green>"))
+		for _, reference := range misconfig.GetReferences() {
+			lines = append(lines, tml.Sprintf("   <blue>%s</blue>", reference))
+		}
+	}
+
+	if cause.Code.Lines != nil && len(cause.Code.Lines) > 0 {
+		lines = append(lines, tml.Sprintf("<green> Code:</green>"))
+		for _, line := range cause.Code.Lines {
+			if line.Truncated {
+				lines = append(lines, tml.Sprintf("   %d: ...", line.Number))
+			} else if line.IsCause {
+				lines = append(lines, tml.Sprintf("   %d: <red>%s</red>", line.Number, line.Content))
+			} else {
+				lines = append(lines, tml.Sprintf("   %d: %s", line.Number, line.Content))
+			}
+
+		}
+	}
+
+	v, err := g.SetView(i.name, i.x, i.y, i.w, i.h, 0)
+	if err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return fmt.Errorf("failed to create view: %w", err)
+		}
+	}
+
+	_, _ = fmt.Fprintln(v, strings.Join(lines, "\n"))
+	v.Title = fmt.Sprintf(" Summary for %s ", misconfig.GetID())
+	v.Subtitle = " Escape or 'q' to close "
+	v.Wrap = true
+	v.TitleColor = gocui.ColorGreen
+	v.FrameColor = gocui.ColorGreen
+	return nil
+}
+
+func (i *SummaryWidget) layoutVulnerability(g *gocui.Gui) error {
+	vulnerability := i.issue
+	var lines []string
+
+	lines = printMultiline(vulnerability.GetTitle(), "Title", lines, i.w-i.x-20)
+	lines = printMultiline(vulnerability.GetTitle(), "Description", lines, i.w-i.x-20)
+	lines = printSingleLine(vulnerability.GetID(), "Vulnerability ID", lines)
+
+	if vulnerability.GetDatasourceName() != "" {
+		lines = append(lines, tml.Sprintf("<green> DataSource:</green>\n   %s\n", vulnerability.GetDatasourceName()))
+	}
+	lines = printSingleLine(vulnerability.GetSeverity(), "Severity", lines)
+	lines = printSingleLine(vulnerability.GetSeveritySource(), "Severity Source", lines)
+	lines = printSingleLine(vulnerability.GetPackageName(), "Package Name", lines)
+	lines = printSingleLine(vulnerability.GetPackagePath(), "Package Path", lines)
+	lines = printSingleLine(vulnerability.GetInstalledVersion(), "Installed Version", lines)
+	lines = printSingleLine(vulnerability.GetFixedVersion(), "Fixed Version", lines)
+	if vulnerability.GetCVSS() != nil {
+		for cvss, vals := range vulnerability.GetCVSS() {
 			lines = append(lines, tml.Sprintf("<green> %s:</green>", cvss))
 			if valsMap, ok := vals.(map[string]interface{}); ok {
 				for k, v := range valsMap {
@@ -117,12 +197,12 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 		}
 	}
 
-	if vulnerability.PrimaryURL != "" {
-		lines = append(lines, tml.Sprintf("<green> More Info:</green>\n   <blue>%s</blue>\n", vulnerability.PrimaryURL))
+	if vulnerability.GetPrimaryURL() != "" {
+		lines = append(lines, tml.Sprintf("<green> More Info:</green>\n   <blue>%s</blue>\n", vulnerability.GetPrimaryURL()))
 	}
-	if len(vulnerability.References) > 0 {
+	if len(vulnerability.GetReferences()) > 0 {
 		lines = append(lines, tml.Sprintf("<green> References:</green>"))
-		for _, reference := range vulnerability.References {
+		for _, reference := range vulnerability.GetReferences() {
 			lines = append(lines, tml.Sprintf("   <blue>%s</blue>", reference))
 		}
 	}
@@ -135,7 +215,7 @@ func (i *SummaryWidget) Layout(g *gocui.Gui) error {
 	}
 
 	_, _ = fmt.Fprintln(v, strings.Join(lines, "\n"))
-	v.Title = fmt.Sprintf(" Summary for %s ", i.vuln.VulnerabilityID)
+	v.Title = fmt.Sprintf(" Summary for %s ", vulnerability.GetID())
 	v.Subtitle = " Escape or 'q' to close "
 	v.Wrap = true
 	v.TitleColor = gocui.ColorGreen

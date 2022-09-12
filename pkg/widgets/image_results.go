@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -86,7 +87,24 @@ func (w *ImageResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 			return nil
 		}
 
-		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, vuln)
+		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, vuln, func(gui *gocui.Gui) error {
+			if len(w.v.BufferLines()) > 0 {
+				if image, _ := w.v.Line(0); image != "" {
+					w.ctx.ScanImage(context.Background(), image)
+				}
+			}
+			gui.Mouse = true
+			gui.Cursor = false
+
+			if err := gui.DeleteView(Remote); err != nil {
+				return fmt.Errorf("failed to delete view 'remote': %w", err)
+			}
+			if _, err := gui.SetCurrentView(Results); err != nil {
+				return fmt.Errorf("failed to switch view to 'results': %w", err)
+			}
+
+			return nil
+		})
 		if err != nil {
 			return err
 		}

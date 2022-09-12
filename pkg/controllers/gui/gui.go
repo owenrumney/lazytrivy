@@ -3,9 +3,11 @@ package gui
 import (
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/owenrumney/lazytrivy/pkg/controllers/filesystem"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 
 	"github.com/owenrumney/lazytrivy/pkg/config"
@@ -25,7 +27,17 @@ type Controller struct {
 	config           *config.Config
 }
 
-func New() (*Controller, error) {
+func (c *Controller) SetSelected(selected string) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (c *Controller) RefreshView(viewName string) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func New(tab widgets.Tab, cwd string) (*Controller, error) {
 	logger.Debugf("Creating GUI")
 	cui, err := gocui.NewGui(gocui.OutputNormal, true)
 	if err != nil {
@@ -44,7 +56,16 @@ func New() (*Controller, error) {
 
 		config: cfg,
 	}
-	mainController.activeController = vulnerabilities.NewVulnerabilityController(cui, dockerClient, cfg)
+
+	switch tab {
+	case widgets.AWSTab:
+		mainController.activeController = aws.NewAWSController(cui, dockerClient, cfg)
+	case widgets.FileSystemTab:
+		mainController.activeController = filesystem.NewFilesystemController(cui, dockerClient, cfg, cwd)
+	default:
+		mainController.activeController = vulnerabilities.NewVulnerabilityController(cui, dockerClient, cfg)
+
+	}
 
 	return mainController, nil
 }
@@ -114,27 +135,42 @@ func (c *Controller) AddViews(w ...gocui.Manager) {
 	c.views = append(c.views, w...)
 }
 
-func (c *Controller) RefreshManager() {
+func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 
-	views := make([]gocui.Manager, 0, len(c.views)+1)
-	views = append(views, c.views...)
-
-	c.cui.SetManager(views...)
-
-}
-
-func (c *Controller) switchMode(*gocui.Gui, *gocui.View) error {
-
-	switch c.activeController.Tab() {
-	case widgets.VulnerabilitiesTab:
-		c.activeController = aws.NewAWSController(c.cui, c.dockerClient, c.config)
-	case widgets.AWSTab:
-		c.activeController = vulnerabilities.NewVulnerabilityController(c.cui, c.dockerClient, c.config)
+	choices := []string{
+		"**0*** Image Scanning",
+		"**1*** File System",
+		"**2*** AWS",
 	}
 
-	if err := c.CreateWidgets(); err != nil {
-		return err
-	}
+	w, y := c.cui.Size()
 
-	return c.Initialise()
+	choiceWidget := widgets.NewChoiceWidget("mode", w, y, "Switch Mode", choices, func(selectedMode string) error {
+		switch selectedMode {
+		case "AWS":
+			c.activeController = aws.NewAWSController(c.cui, c.dockerClient, c.config)
+		case "File System":
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			c.activeController = filesystem.NewFilesystemController(c.cui, c.dockerClient, c.config, cwd)
+		case "Image Scanning":
+			c.activeController = vulnerabilities.NewVulnerabilityController(c.cui, c.dockerClient, c.config)
+		}
+
+		if err := c.CreateWidgets(); err != nil {
+			return err
+		}
+
+		if err := c.Initialise(); err != nil {
+			return err
+		}
+		return nil
+	}, c)
+
+	_ = choiceWidget.Layout(gui)
+	_, err := gui.SetCurrentView("mode")
+	return err
+
 }
