@@ -6,5 +6,4 @@ import (
 
 type Manager interface {
 	AddViews(views ...gocui.Manager)
-	RefreshManager()
 }

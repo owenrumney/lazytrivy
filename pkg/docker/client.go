@@ -120,13 +120,22 @@ func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progr
 	return c.scan(ctx, command, imageName, []string{}, progress)
 }
 
-func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress) (*output.Report, error) {
+func (c *Client) ScanFilesystem(ctx context.Context, path string, requiredChecks []string, progress Progress) (*output.Report, error) {
+	logger.Debugf("Scanning filesystem %s", path)
+	checks := strings.Join(requiredChecks, ",")
+
+	progress.UpdateStatus(fmt.Sprintf("Scanning filesystem %s...", path))
+	command := []string{"fs", "--quiet", "--security-checks", checks, "-f=json", "/target"}
+
+	return c.scan(ctx, command, path, []string{}, progress, fmt.Sprintf("%s:/target", path))
+}
+
+func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress, additionalBinds ...string) (*output.Report, error) {
 	if !c.trivyImagePresent {
 		report, err2 := c.buildScannerImage(ctx)
 		if err2 != nil {
 			return report, err2
 		}
-
 	}
 
 	logger.Debugf("Running trivy scan with command %s", command)
@@ -140,6 +149,14 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	cachePath := filepath.Join(userHomeDir, ".cache")
 	awsPath := filepath.Join(userHomeDir, ".aws")
 
+	binds := []string{
+		"/var/run/docker.sock:/var/run/docker.sock",
+		fmt.Sprintf("%s:/root/.cache", cachePath),
+		fmt.Sprintf("%s:/root/.aws", awsPath),
+	}
+
+	binds = append(binds, additionalBinds...)
+
 	cont, err := c.client.ContainerCreate(ctx, &container.Config{
 		Image:        "lazytrivy:latest",
 		Cmd:          command,
@@ -148,11 +165,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		AttachStderr: false,
 		User:         "trivy",
 	}, &container.HostConfig{
-		Binds: []string{
-			"/var/run/docker.sock:/var/run/docker.sock",
-			fmt.Sprintf("%s:/root/.cache", cachePath),
-			fmt.Sprintf("%s:/root/.aws", awsPath),
-		},
+		Binds: binds,
 	}, nil, nil, "")
 	if err != nil {
 		return nil, err
@@ -199,7 +212,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		return nil, ctx.Err() // nolint
 	default:
 
-		progress.UpdateStatus(fmt.Sprintf("Scanning of %s...done", scanTarget))
+		progress.UpdateStatus(fmt.Sprintf("Scanning %s...done", scanTarget))
 		return rep, nil
 	}
 }

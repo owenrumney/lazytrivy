@@ -23,3 +23,8 @@ type awsContext interface {
 	UpdateAccount(account string) error
 	UpdateRegion(region string) error
 }
+
+type fsContext interface {
+	baseContext
+	ShowTarget(ctx context.Context, target string)
+}

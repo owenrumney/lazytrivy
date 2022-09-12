@@ -3,13 +3,12 @@ package widgets
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/liamg/tml"
 )
 
-type HostWidget struct {
+type ScanPathWidget struct {
 	name string
 	x, y int
 	w, h int
@@ -18,28 +17,25 @@ type HostWidget struct {
 	ctx  baseContext
 }
 
-func NewHostWidget(name string, ctx baseContext) *HostWidget {
-	hostName, err := os.Hostname()
-	if err != nil {
-		hostName = "unknown"
-	}
-	return &HostWidget{
+func NewScanPathWidget(name string, workingDir string, ctx baseContext) *ScanPathWidget {
+
+	return &ScanPathWidget{
 		name: name,
 		x:    1,
 		y:    0,
 		w:    5,
 		h:    1,
-		body: hostName,
+		body: workingDir,
 		ctx:  ctx,
 	}
 }
 
-func (w *HostWidget) ConfigureKeys(*gocui.Gui) error {
+func (w *ScanPathWidget) ConfigureKeys(*gocui.Gui) error {
 	// nothing to configure here
 	return nil
 }
 
-func (w *HostWidget) Layout(g *gocui.Gui) error {
+func (w *ScanPathWidget) Layout(g *gocui.Gui) error {
 	v, err := g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
 	if err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -48,12 +44,12 @@ func (w *HostWidget) Layout(g *gocui.Gui) error {
 		_ = tml.Fprintf(v, " <blue>%s</blue>", w.body)
 	}
 
-	v.Title = " Host "
+	v.Title = " Current Scan Path "
 	w.v = v
 	return nil
 }
 
-func (w *HostWidget) RefreshView() {
+func (w *ScanPathWidget) RefreshView() {
 	w.v.Clear()
 	_, _ = fmt.Fprintf(w.v, w.body)
 }

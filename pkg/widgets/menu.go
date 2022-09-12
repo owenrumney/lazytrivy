@@ -21,7 +21,12 @@ func (w *MenuWidget) RefreshView() {
 	panic("unimplemented")
 }
 
-func NewMenuWidget(name string, x, y, w, h int, menuItems []string) *MenuWidget {
+func NewMenuWidget(name string, x, y, w, h int) *MenuWidget {
+
+	menuItems := []string{
+		"<blue>[?]</blue> help", "s<blue>[w]</blue>itch mode", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
+		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
+	}
 
 	return &MenuWidget{
 		name: name,

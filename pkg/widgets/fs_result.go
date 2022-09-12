@@ -12,20 +12,20 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
-type AWSResultWidget struct {
+type FSResultWidget struct {
 	ResultsWidget
 	name string
 	x, y int
 	w, h int
 
-	ctx           awsContext
+	ctx           fsContext
 	currentResult *output.Result
 	results       []*output.Result
 	issues        []output.Issue
 }
 
-func NewAWSResultWidget(name string, g awsContext) *AWSResultWidget {
-	widget := &AWSResultWidget{
+func NewFSResultWidget(name string, g fsContext) *FSResultWidget {
+	widget := &FSResultWidget{
 		name: name,
 		x:    0,
 		y:    0,
@@ -38,7 +38,7 @@ func NewAWSResultWidget(name string, g awsContext) *AWSResultWidget {
 	return widget
 }
 
-func (w *AWSResultWidget) ConfigureKeys(gui *gocui.Gui) error {
+func (w *FSResultWidget) ConfigureKeys(gui *gocui.Gui) error {
 	if err := w.configureListWidgetKeys(w.name); err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (w *AWSResultWidget) ConfigureKeys(gui *gocui.Gui) error {
 	return nil
 }
 
-func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
+func (w *FSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
 	switch w.mode {
 	case SummaryResultMode:
 		id := w.CurrentItemPosition()
@@ -84,22 +84,7 @@ func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
 			return nil
 		}
 
-		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, issue, func(gui *gocui.Gui) error {
-			gui.Mouse = true
-			gui.Cursor = false
-
-			if err := gui.DeleteView(Remote); err != nil {
-				return fmt.Errorf("failed to delete view 'remote': %w", err)
-			}
-			if _, err := gui.SetCurrentView(Results); err != nil {
-				return fmt.Errorf("failed to switch view to 'results': %w", err)
-			}
-
-			w.GenerateFilteredReport("ALL", gui)
-			return nil
-
-		})
-
+		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, issue, nil)
 		if err != nil {
 			return err
 		}
@@ -118,7 +103,7 @@ func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
 	return nil
 }
 
-func (w *AWSResultWidget) Layout(g *gocui.Gui) error {
+func (w *FSResultWidget) Layout(g *gocui.Gui) error {
 	v, err := g.View(w.name)
 	if err != nil {
 		v, err = g.SetView(w.name, w.x, w.y, w.w, w.h, 0)
@@ -142,7 +127,7 @@ func (w *AWSResultWidget) Layout(g *gocui.Gui) error {
 	return nil
 }
 
-func (w *AWSResultWidget) Reset() {
+func (w *FSResultWidget) Reset() {
 	w.v.Clear()
 	w.v.Title = " Results "
 
@@ -152,13 +137,14 @@ func (w *AWSResultWidget) Reset() {
 	}
 }
 
-func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.Gui) {
+func (w *FSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.Gui) {
 	if len(reports) == 0 {
 		return
 	}
 
 	w.mode = SummaryResultMode
 	w.currentReport = reports[0]
+	w.currentReport.Process()
 	w.v.Clear()
 	w.body = []string{}
 
@@ -222,28 +208,14 @@ func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.
 	w.v.Subtitle = ""
 }
 
-func (w *AWSResultWidget) RenderReport(report *output.Report, severity string) {
+func (w *FSResultWidget) RenderReport(result *output.Result, report *output.Report, severity string) {
+	w.currentResult = result
 	w.currentReport = report
 
 	w.GenerateFilteredReport(severity, nil)
 }
 
-func (w *AWSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) {
-	if w.currentResult == nil || len(w.currentResult.Issues) == 0 {
-		width, height := w.v.Size()
-
-		lines := []string{
-			"Great News!",
-			"",
-			"No misconfigurations found!",
-		}
-
-		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, g)
-		_ = announcement.Layout(g)
-		_, _ = g.SetCurrentView(Announcement)
-
-		return
-	}
+func (w *FSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) {
 
 	w.mode = DetailsResultMode
 	w.issues = []output.Issue{}
@@ -277,16 +249,16 @@ func (w *AWSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) 
 	bodyContent = append(bodyContent, strings.Repeat("─", width))
 
 	misconfigurationCount := 0
-	issues := w.currentResult.GetIssuesForSeverity(severity)
+	misconfigurations := w.currentResult.GetIssuesForSeverity(severity)
 
-	sort.Slice(issues, func(i, j int) bool {
-		return severityAsInt(issues[i].GetSeverity()) < severityAsInt(issues[j].GetSeverity()) //nolint:scopelint
+	sort.Slice(misconfigurations, func(i, j int) bool {
+		return severityAsInt(misconfigurations[i].GetSeverity()) < severityAsInt(misconfigurations[j].GetSeverity()) //nolint:scopelint
 	})
 
-	for _, issue := range issues {
+	for _, issue := range misconfigurations {
 
 		f, b := colouredSeverity(issue.GetSeverity())
-		toPrint := fmt.Sprintf("**%d***  %s % -16s %s", misconfigurationCount, tml.Sprintf(f+"% -10s"+b, issue.GetSeverity()),
+		toPrint := fmt.Sprintf("**%d***  %s % -16s %s", misconfigurationCount, tml.Sprintf(f+"% -12s"+b, issue.GetSeverity()),
 			issue.GetID(), issue.GetTitle())
 
 		bodyContent = append(bodyContent, toPrint)
@@ -297,15 +269,15 @@ func (w *AWSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) 
 	w.body = bodyContent
 
 	w.ctx.RefreshView(w.name)
-
+	w.bottomMost = len(w.body)
 	w.SetStartPosition(3)
 	w.v.Subtitle = fmt.Sprintf(" %s ", strings.Join(severities, " | "))
 }
 
-func (w *AWSResultWidget) RefreshView() {
+func (w *FSResultWidget) RefreshView() {
 	w.refreshView()
 }
 
-func (w *AWSResultWidget) CurrentReport() *output.Report {
+func (w *FSResultWidget) CurrentReport() *output.Report {
 	return w.currentReport
 }

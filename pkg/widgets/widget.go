@@ -14,6 +14,8 @@ const (
 	Services     = "services"
 	Status       = "status"
 	Summary      = "summary"
+	Files        = "files"
+	ScanPath     = "scanpath"
 )
 
 type Widget interface {
@@ -27,4 +29,5 @@ type Tab string
 const (
 	VulnerabilitiesTab Tab = "Vulnerabilities"
 	AWSTab             Tab = "AWS"
+	FileSystemTab      Tab = "FileSystem"
 )
