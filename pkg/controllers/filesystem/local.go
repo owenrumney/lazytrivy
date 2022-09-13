@@ -47,9 +47,17 @@ func (c *Controller) moveViewRight(*gocui.Gui, *gocui.View) error {
 
 func (c *Controller) scanVulnerabilities() error {
 	logger.Debugf("scanning for vulnerabilities")
-	c.UpdateStatus("Scanning current working dir for vulnerabilities...")
+	var scanChecks []string
 
-	scanChecks := []string{"vuln", "config", "secret"}
+	if c.Config.Filesystem.ScanVulnerabilities {
+		scanChecks = append(scanChecks, "vuln")
+	}
+	if c.Config.Filesystem.ScanMisconfiguration {
+		scanChecks = append(scanChecks, "config")
+	}
+	if c.Config.Filesystem.ScanSecrets {
+		scanChecks = append(scanChecks, "secret")
+	}
 
 	report, err := c.DockerClient.ScanFilesystem(context.TODO(), c.workingDireectory, scanChecks, c)
 	if err != nil {
@@ -88,7 +96,7 @@ func (c *Controller) scanVulnerabilities() error {
 	return nil
 }
 
-func (c *Controller) ShowTarget(ctx context.Context, target string) {
+func (c *Controller) ShowTarget(_ context.Context, target string) {
 	c.currentTarget = target
 	c.Cui.Update(func(gocui *gocui.Gui) error {
 		if err := c.RenderFilesystemFileReport(); err != nil {
@@ -97,4 +105,28 @@ func (c *Controller) ShowTarget(ctx context.Context, target string) {
 		_, err := c.Cui.SetCurrentView(widgets.Results)
 		return err
 	})
+}
+
+func (c *Controller) showPathChange(gui *gocui.Gui, _ *gocui.View) error {
+
+	maxX, maxY := gui.Size()
+
+	gui.Cursor = true
+	pathChange, err := widgets.NewPathChangeWidget(widgets.PathChange, maxX, maxY, 150, c.workingDireectory, c)
+	if err != nil {
+		return fmt.Errorf("failed to create pathchange input: %w", err)
+	}
+	gui.Update(func(g *gocui.Gui) error {
+		gui.Mouse = false
+		if err := pathChange.Layout(gui); err != nil {
+			return fmt.Errorf("failed to layout pathchange input: %w", err)
+		}
+		_, err := gui.SetCurrentView(widgets.PathChange)
+		if err != nil {
+			return fmt.Errorf("failed to set current view: %w", err)
+		}
+		return nil
+	})
+	return nil
+
 }

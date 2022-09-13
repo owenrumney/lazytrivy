@@ -30,5 +30,9 @@ func (c *Controller) configureKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for moving right: %w", err)
 	}
 
+	if err := c.Cui.SetKeybinding("", 'c', gocui.ModNone, c.showPathChange); err != nil {
+		return fmt.Errorf("error setting keybinding for moving right: %w", err)
+	}
+
 	return nil
 }

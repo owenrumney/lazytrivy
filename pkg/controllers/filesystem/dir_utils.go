@@ -76,7 +76,7 @@ func (d *dir) generateTree(lines []string, depth int) []string {
 		lines = children.generateTree(lines, depth)
 	}
 
-	for file, _ := range d.files {
+	for file := range d.files {
 		lines = append(lines, fmt.Sprintf("%s%s", prefix, file))
 	}
 

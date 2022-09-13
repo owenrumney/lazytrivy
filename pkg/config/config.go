@@ -11,6 +11,7 @@ import (
 type Config struct {
 	AWS            AWSConfig
 	Vulnerability  VulnerabilityConfig
+	Filesystem     FileSystemConfig
 	CacheDirectory string `json:"-"`
 	Debug          bool
 }
@@ -23,6 +24,12 @@ type AWSConfig struct {
 
 type VulnerabilityConfig struct {
 	IgnoreUnfixed bool
+}
+
+type FileSystemConfig struct {
+	ScanSecrets          bool
+	ScanMisconfiguration bool
+	ScanVulnerabilities  bool
 }
 
 var defaultConfig *Config
@@ -45,6 +52,11 @@ func init() {
 		},
 		Vulnerability: VulnerabilityConfig{
 			IgnoreUnfixed: false,
+		},
+		Filesystem: FileSystemConfig{
+			ScanSecrets:          false,
+			ScanMisconfiguration: true,
+			ScanVulnerabilities:  true,
 		},
 	}
 	configDir, err := os.UserConfigDir()

@@ -6,7 +6,6 @@ const (
 	IssueTypeMisconfiguration IssueType = iota
 	IssueTypeVulnerability
 	IssueTypeSecret
-	IssueTypeLicense
 )
 
 // Issue is the interface that makes the shared SummaryWidget possible

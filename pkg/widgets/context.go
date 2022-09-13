@@ -27,4 +27,6 @@ type awsContext interface {
 type fsContext interface {
 	baseContext
 	ShowTarget(ctx context.Context, target string)
+	ScanVulnerabilities(gui *gocui.Gui, view *gocui.View) error
+	SetWorkingDirectory(dir string)
 }

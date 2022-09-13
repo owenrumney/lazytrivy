@@ -24,7 +24,8 @@ func (w *MenuWidget) RefreshView() {
 func NewMenuWidget(name string, x, y, w, h int) *MenuWidget {
 
 	menuItems := []string{
-		"<blue>[?]</blue> help", "s<blue>[w]</blue>itch mode", "<red>[t]</red>erminate scan", "<red>[q]</red>uit",
+		"<blue>[?]</blue> help", "<blue>[,]</blue> settings", "s<blue>[w]</blue>itch mode",
+		"<red>[t]</red>erminate scan", "<red>[q]</red>uit",
 		"\n\n<yellow>Navigation: Use arrow keys to navigate and ESC to exit screens</yellow>",
 	}
 

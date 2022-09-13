@@ -45,7 +45,7 @@ func NewResultsWidget(name string, generateReportFunc func(severity string, gui 
 	return widget
 }
 
-func (w *ResultsWidget) addFilteringKeyBinding(key rune, severity string, gui *gocui.Gui) error {
+func (w *ResultsWidget) addFilteringKeyBinding(key rune, severity string, _ *gocui.Gui) error {
 	if err := w.ctx.SetKeyBinding(w.name, key, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if w.currentReport == nil {
 			return nil
