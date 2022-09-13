@@ -113,6 +113,6 @@ By pressing `r` you can switch region in results you already have.
 
 ### Scanning a filesystem
 
-To scan a filessystem, you can use the `w` key to switch to Filesystem mode, from there you will get all of the vulnerabilities, misconfigurations and secrets from the current working directory
+To scan a filessystem, you can use the `w` key to switch to Filesystem mode, from there you will get all the vulnerabilities, misconfigurations and secrets from the current working directory
 
 ![Scanning a filesystem](./.github/images/scan_filesystem.gif)

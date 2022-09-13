@@ -27,12 +27,12 @@ type Controller struct {
 	config           *config.Config
 }
 
-func (c *Controller) SetSelected(selected string) {
+func (c *Controller) SetSelected(_ string) {
 	// TODO implement me
 	panic("implement me")
 }
 
-func (c *Controller) RefreshView(viewName string) {
+func (c *Controller) RefreshView(_ string) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -138,14 +138,15 @@ func (c *Controller) AddViews(w ...gocui.Manager) {
 func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 
 	choices := []string{
-		"**0*** Image Scanning",
+
+		"**0*** AWS",
 		"**1*** File System",
-		"**2*** AWS",
+		"**2*** Image",
 	}
 
 	w, y := c.cui.Size()
 
-	choiceWidget := widgets.NewChoiceWidget("mode", w, y, "Switch Mode", choices, func(selectedMode string) error {
+	choiceWidget := widgets.NewChoiceWidget("mode", w, y, "Scanning Mode", choices, func(selectedMode string) error {
 		switch selectedMode {
 		case "AWS":
 			c.activeController = aws.NewAWSController(c.cui, c.dockerClient, c.config)
@@ -155,7 +156,7 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 				return err
 			}
 			c.activeController = filesystem.NewFilesystemController(c.cui, c.dockerClient, c.config, cwd)
-		case "Image Scanning":
+		default:
 			c.activeController = vulnerabilities.NewVulnerabilityController(c.cui, c.dockerClient, c.config)
 		}
 

@@ -17,6 +17,16 @@ type Controller struct {
 	*state
 }
 
+func (c *Controller) SetWorkingDirectory(dir string) {
+	c.workingDireectory = dir
+
+	if v, ok := c.Views[widgets.ScanPath]; ok {
+		if sp, ok := v.(*widgets.ScanPathWidget); ok {
+			sp.UpdateWorkingDir(dir)
+		}
+	}
+}
+
 func NewFilesystemController(cui *gocui.Gui, dockerClient *docker.Client, cfg *config.Config, workingDir string) *Controller {
 
 	logger.Debugf("Creating new filesystem controller for %s", workingDir)
@@ -78,10 +88,6 @@ func (c *Controller) Initialise() error {
 			outerErr = fmt.Errorf("failed to set current view: %w", err)
 		}
 
-		if err := c.scanVulnerabilities(); err != nil {
-			return err
-		}
-
 		return err
 	})
 
@@ -134,4 +140,9 @@ func (c *Controller) RenderFilesystemFileReportd(report *output.Report) error {
 
 	}
 	return fmt.Errorf("failed to render results report summary") //nolint:goerr113
+}
+
+func (c *Controller) ScanVulnerabilities(*gocui.Gui, *gocui.View) error {
+	c.UpdateStatus(fmt.Sprintf("Scanning %s", c.workingDireectory))
+	return c.scanVulnerabilities()
 }

@@ -215,7 +215,7 @@ func (w *FSResultWidget) RenderReport(result *output.Result, report *output.Repo
 	w.GenerateFilteredReport(severity, nil)
 }
 
-func (w *FSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) {
+func (w *FSResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui) {
 
 	w.mode = DetailsResultMode
 	w.issues = []output.Issue{}

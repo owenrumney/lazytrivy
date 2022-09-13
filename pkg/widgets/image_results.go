@@ -36,7 +36,7 @@ func NewImageResultWidget(name string, g vulnerabilityContext) *ImageResultWidge
 	return widget
 }
 
-func (w *ImageResultWidget) ConfigureKeys(g *gocui.Gui) error {
+func (w *ImageResultWidget) ConfigureKeys(_ *gocui.Gui) error {
 	if err := w.configureListWidgetKeys(w.name); err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (w *ImageResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func (w *ImageResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.Gui) {
+func (w *ImageResultWidget) UpdateResultsTable(reports []*output.Report, _ *gocui.Gui) {
 	w.mode = SummaryResultMode
 	w.reports = reports
 
@@ -192,7 +192,7 @@ func (w *ImageResultWidget) RenderReport(report *output.Report, severity string,
 	_, _ = cui.SetCurrentView(Results)
 }
 
-func (w *ImageResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) {
+func (w *ImageResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui) {
 	if w.currentReport == nil {
 		return
 	}

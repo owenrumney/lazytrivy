@@ -22,5 +22,9 @@ func (c *Controller) ConfigureGlobalKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for help: %w", err)
 	}
 
+	if err := c.Cui.SetKeybinding("", ',', gocui.ModNone, c.showSettings); err != nil {
+		return fmt.Errorf("error setting keybinding for settings: %w", err)
+	}
+
 	return nil
 }

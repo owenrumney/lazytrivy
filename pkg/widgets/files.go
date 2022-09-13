@@ -34,7 +34,7 @@ func NewFilesWidget(name string, g fsContext) *FilesWidget {
 		w:    w,
 		h:    1,
 		ctx:  g,
-		body: []string{"Scanning filesystem..."},
+		body: []string{" Press 's' to scan path "},
 	}
 
 	return widget
@@ -43,6 +43,10 @@ func NewFilesWidget(name string, g fsContext) *FilesWidget {
 func (w *FilesWidget) ConfigureKeys(*gocui.Gui) error {
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowUp, gocui.ModNone, w.previousItem); err != nil {
 		return fmt.Errorf("failed to set the previous image %w", err)
+	}
+
+	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, w.ctx.ScanVulnerabilities); err != nil {
+
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyArrowDown, gocui.ModNone, w.nextItem); err != nil {
@@ -67,9 +71,10 @@ func (w *FilesWidget) Layout(g *gocui.Gui) error {
 		}
 		_, _ = fmt.Fprint(v, w.body)
 		_ = v.SetCursor(0, 0)
+		v.Highlight = false
 	}
 	v.Title = " Files "
-	v.Highlight = true
+
 	v.SelBgColor = gocui.ColorGreen | gocui.AttrDim
 	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
 	if g.CurrentView() == v {
@@ -96,6 +101,7 @@ func (w *FilesWidget) RefreshFiles(files []string, fileWidth int) error {
 		w.bottomMost = len(fileList)
 	}
 	w.body = files
+	w.v.Highlight = true
 	w.RefreshView()
 	_ = w.v.SetCursor(0, 0)
 	return nil

@@ -49,6 +49,11 @@ func (w *ScanPathWidget) Layout(g *gocui.Gui) error {
 	return nil
 }
 
+func (w *ScanPathWidget) UpdateWorkingDir(workingDir string) {
+	w.body = workingDir
+	w.RefreshView()
+}
+
 func (w *ScanPathWidget) RefreshView() {
 	w.v.Clear()
 	_, _ = fmt.Fprintf(w.v, w.body)

@@ -5,17 +5,18 @@ import "github.com/awesome-gocui/gocui"
 const (
 	Account      = "account"
 	Announcement = "announcement"
+	Files        = "files"
 	Filter       = "filter"
 	Host         = "host"
 	Images       = "images"
 	Menu         = "menu"
+	PathChange   = "pathchange"
 	Remote       = "remote"
 	Results      = "results"
+	ScanPath     = "scanpath"
 	Services     = "services"
 	Status       = "status"
 	Summary      = "summary"
-	Files        = "files"
-	ScanPath     = "scanpath"
 )
 
 type Widget interface {
