@@ -23,7 +23,8 @@ func NewRemoteImageWidget(name string, maxX, maxY, maxLength int, ctx vulnerabil
 	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if len(view.BufferLines()) > 0 {
 			if image, _ := view.Line(0); image != "" {
-				ctx.ScanImage(context.Background(), image)
+				ctx.SetSelected(image)
+				ctx.ScanImage(context.Background())
 			}
 		}
 		gui.Mouse = true

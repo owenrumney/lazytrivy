@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/owenrumney/lazytrivy/pkg/logger"
 )
 
 type ListWidget struct {
@@ -29,24 +30,33 @@ func (w *ListWidget) configureListWidgetKeys(name string) error {
 }
 
 func (w *ListWidget) previousItem(_ *gocui.Gui, v *gocui.View) error {
+	logger.Tracef("Current position before moving previous: %d", w.currentPos)
 	if w.currentPos <= w.topMost {
+		logger.Tracef("Current position is top most, not moving")
 		return nil
 	}
-	v.MoveCursor(0, -1)
 
-	_, y := v.Cursor()
-	_, oy := v.Origin()
+	_, oldOy := v.Origin()
+	v.MoveCursor(0, -1)
+	_, newOy := v.Origin()
+	// this is a fudge to workaround moveCursor also shifting the origin... it's sorting out the double bounce
+	v.MoveCursor(0, oldOy-newOy)
+
+	w.currentPos--
 	if w.selectionChangeFunc != nil {
-		if selected, err := v.Line(y + oy); err == nil {
+		if selected, err := v.Line(w.currentPos); err == nil {
 			w.selectionChangeFunc(selected)
 		}
 	}
-	w.currentPos = y + oy
+
+	logger.Tracef("Current position after moving previous: %d", w.currentPos)
 	return nil
 }
 
 func (w *ListWidget) nextItem(_ *gocui.Gui, v *gocui.View) error {
+	logger.Tracef("Current position after moving next: %d", w.currentPos)
 	if w.currentPos >= w.bottomMost {
+		logger.Tracef("Current position is bottom most, not moving")
 		return nil
 	}
 	v.MoveCursor(0, 1)
@@ -68,7 +78,7 @@ func (w *ListWidget) nextItem(_ *gocui.Gui, v *gocui.View) error {
 		}
 	}
 	w.currentPos = y + oy
-
+	logger.Tracef("Current position after moving next: %d", w.currentPos)
 	return nil
 }
 

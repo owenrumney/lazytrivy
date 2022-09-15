@@ -26,9 +26,10 @@ type Progress interface {
 }
 
 type Client struct {
-	client            *client.Client
-	imageNames        []string
-	trivyImagePresent bool
+	client                *client.Client
+	imageNames            []string
+	trivyImagePresent     bool
+	lazyTrivyImagePresent bool
 }
 
 func NewClient() *Client {
@@ -57,11 +58,17 @@ func (c *Client) ListImages() []string {
 	for _, image := range images {
 		if image.RepoTags != nil {
 			imageName := image.RepoTags[0]
-			if strings.HasPrefix(imageName, "lazytrivy:") {
+
+			if strings.HasPrefix(imageName, "<none>:") {
+				continue
+			}
+
+			if strings.HasPrefix(imageName, "aquasec/trivy") {
 				logger.Debugf("Found trivy image %s", imageName)
 				c.trivyImagePresent = true
-
-				continue
+			} else if strings.HasPrefix(imageName, "lazytrivy:1.0.0") {
+				logger.Debugf("Found lazy trivy image %s", imageName)
+				c.lazyTrivyImagePresent = true
 			}
 			imageNames = append(imageNames, imageName)
 		}
@@ -109,7 +116,18 @@ func (c *Client) ScanService(ctx context.Context, serviceName string, accountNo,
 		logger.Debugf("Cache will be updated for %s", serviceName)
 		command = append(command, "--update-cache")
 	}
-	return c.scan(ctx, command, target, env, progress)
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		logger.Debugf("Error getting user home dir: %s", err)
+		userHomeDir = os.TempDir()
+	}
+	awsPath := filepath.Join(userHomeDir, ".aws")
+
+	additionalBinds := []string{
+		fmt.Sprintf("%s:/root/.aws", awsPath),
+	}
+
+	return c.scan(ctx, command, target, env, progress, "lazytrivy:latest", additionalBinds...)
 }
 
 func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progress) (*output.Report, error) {
@@ -117,7 +135,7 @@ func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progr
 	progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
 	command := []string{"image", "-f=json", imageName}
 
-	return c.scan(ctx, command, imageName, []string{}, progress)
+	return c.scan(ctx, command, imageName, []string{}, progress, "aquasec/trivy:latest")
 }
 
 func (c *Client) ScanFilesystem(ctx context.Context, path string, requiredChecks []string, progress Progress) (*output.Report, error) {
@@ -127,10 +145,10 @@ func (c *Client) ScanFilesystem(ctx context.Context, path string, requiredChecks
 	progress.UpdateStatus(fmt.Sprintf("Scanning filesystem %s...", path))
 	command := []string{"fs", "--quiet", "--security-checks", checks, "-f=json", "/target"}
 
-	return c.scan(ctx, command, path, []string{}, progress, fmt.Sprintf("%s:/target", path))
+	return c.scan(ctx, command, path, []string{}, progress, "lazytrivy:latest", fmt.Sprintf("%s:/target", path))
 }
 
-func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress, additionalBinds ...string) (*output.Report, error) {
+func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress, scanImageName string, additionalBinds ...string) (*output.Report, error) {
 	if !c.trivyImagePresent {
 		report, err2 := c.buildScannerImage(ctx)
 		if err2 != nil {
@@ -147,23 +165,26 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	}
 
 	cachePath := filepath.Join(userHomeDir, ".cache")
-	awsPath := filepath.Join(userHomeDir, ".aws")
 
 	binds := []string{
 		"/var/run/docker.sock:/var/run/docker.sock",
 		fmt.Sprintf("%s:/root/.cache", cachePath),
-		fmt.Sprintf("%s:/root/.aws", awsPath),
 	}
 
 	binds = append(binds, additionalBinds...)
 
+	user := "root"
+	if scanImageName == "lazytrivy:latest" {
+		user = "trivy"
+	}
+
 	cont, err := c.client.ContainerCreate(ctx, &container.Config{
-		Image:        "lazytrivy:latest",
+		Image:        scanImageName,
 		Cmd:          command,
 		Env:          env,
 		AttachStdout: true,
 		AttachStderr: false,
-		User:         "trivy",
+		User:         user,
 	}, &container.HostConfig{
 		Binds: binds,
 	}, nil, nil, "")
@@ -171,7 +192,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 		return nil, err
 	}
 
-	//  make sure we kill the container
+	// make sure we kill the container
 	defer func() {
 		logger.Debugf("Removing container %s", cont.ID)
 		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
@@ -238,7 +259,7 @@ func (c *Client) buildScannerImage(ctx context.Context) (*output.Report, error) 
 	resp, err := c.client.ImageBuild(ctx, tar, types.ImageBuildOptions{
 		PullParent: true,
 		Dockerfile: "Dockerfile",
-		Tags:       []string{"lazytrivy:latest"},
+		Tags:       []string{"lazytrivy:1.0.0"},
 	})
 	if err != nil {
 		return nil, err
@@ -251,8 +272,7 @@ func (c *Client) buildScannerImage(ctx context.Context) (*output.Report, error) 
 	return nil, nil
 }
 
-func (c *Client) ScanAllImages(ctx context.Context, progress Progress) ([]*output.Report, error) {
-	var reports []*output.Report // nolint
+func (c *Client) ScanAllImages(ctx context.Context, progress Progress, reportComplete func(report *output.Report) error) error {
 
 	for _, imageName := range c.imageNames {
 		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
@@ -260,18 +280,21 @@ func (c *Client) ScanAllImages(ctx context.Context, progress Progress) ([]*outpu
 
 		report, err := c.ScanImage(ctx, imageName, progress)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...done", imageName))
 		logger.Debugf("Scanning image %s...done", imageName)
-		reports = append(reports, report)
+		if err := reportComplete(report); err != nil {
+			logger.Errorf("Error reporting scan results: %s", err)
+			ctx.Done()
+		}
 		select {
 		case <-ctx.Done():
 			logger.Debugf("Context cancelled")
-			return nil, ctx.Err() // nolint
+			return ctx.Err() // nolint
 		default:
 		}
 	}
 
-	return reports, nil
+	return nil
 }

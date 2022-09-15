@@ -3,7 +3,6 @@ package gui
 import (
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/awesome-gocui/gocui"
@@ -50,6 +49,10 @@ func New(tab widgets.Tab, cwd string) (*Controller, error) {
 		return nil, err
 	}
 
+	if cwd != "" {
+		cfg.Filesystem.WorkingDirectory = cwd
+	}
+
 	mainController := &Controller{
 		cui:          cui,
 		dockerClient: dockerClient,
@@ -61,7 +64,7 @@ func New(tab widgets.Tab, cwd string) (*Controller, error) {
 	case widgets.AWSTab:
 		mainController.activeController = aws.NewAWSController(cui, dockerClient, cfg)
 	case widgets.FileSystemTab:
-		mainController.activeController = filesystem.NewFilesystemController(cui, dockerClient, cfg, cwd)
+		mainController.activeController = filesystem.NewFilesystemController(cui, dockerClient, cfg)
 	default:
 		mainController.activeController = vulnerabilities.NewVulnerabilityController(cui, dockerClient, cfg)
 
@@ -151,11 +154,8 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 		case "AWS":
 			c.activeController = aws.NewAWSController(c.cui, c.dockerClient, c.config)
 		case "File System":
-			cwd, err := os.Getwd()
-			if err != nil {
-				return err
-			}
-			c.activeController = filesystem.NewFilesystemController(c.cui, c.dockerClient, c.config, cwd)
+
+			c.activeController = filesystem.NewFilesystemController(c.cui, c.dockerClient, c.config)
 		default:
 			c.activeController = vulnerabilities.NewVulnerabilityController(c.cui, c.dockerClient, c.config)
 		}

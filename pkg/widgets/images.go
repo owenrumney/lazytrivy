@@ -48,9 +48,7 @@ func (w *ImagesWidget) ConfigureKeys(*gocui.Gui) error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		if image := w.SelectedImage(); image != "" {
-			w.ctx.ScanImage(context.Background(), image)
-		}
+		w.ctx.ScanImage(context.Background())
 		return nil
 	}); err != nil {
 		return fmt.Errorf("error setting keybinding for scanning image: %w", err)
@@ -58,7 +56,7 @@ func (w *ImagesWidget) ConfigureKeys(*gocui.Gui) error {
 
 	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if image := w.SelectedImage(); image != "" {
-			w.ctx.ScanImage(context.Background(), image)
+			w.ctx.ScanImage(context.Background())
 		}
 
 		return nil
@@ -80,7 +78,6 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 	}
 	v.Title = " Images "
 	v.Highlight = true
-	v.Autoscroll = true
 	v.Highlight = true
 	v.SelBgColor = gocui.ColorGreen | gocui.AttrDim
 	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
@@ -105,6 +102,8 @@ func (w *ImagesWidget) RefreshImages(images []string, imageWidth int) error {
 	w.body = imageList
 	w.RefreshView()
 	_ = w.v.SetCursor(0, 0)
+
+	w.ctx.SetSelected(images[0])
 	return nil
 }
 

@@ -15,6 +15,7 @@ func (c *Controller) CacheDirectory() string {
 }
 
 func (c *Controller) SetSelected(selected string) {
+	logger.Debugf("Setting selected service to %s", selected)
 	c.selectedService = strings.TrimSpace(selected)
 }
 
@@ -31,9 +32,9 @@ func (c *Controller) UpdateCache(ctx context.Context) (*output.Report, error) {
 	return report, nil
 }
 
-func (c *Controller) ScanService(_ context.Context, serviceName string) {
+func (c *Controller) ScanService(_ context.Context) {
 
-	report, err := c.state.getServiceReport(c.Config.AWS.AccountNo, c.Config.AWS.Region, serviceName)
+	report, err := c.state.getServiceReport(c.Config.AWS.AccountNo, c.Config.AWS.Region, c.selectedService)
 	if err != nil {
 		return
 	}

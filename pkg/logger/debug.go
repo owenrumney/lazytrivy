@@ -18,6 +18,14 @@ func EnableDebugging() {
 	debugFile, _ = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600) // nolint: nosnakecase
 }
 
+func EnableTracing() {
+	EnableDebugging()
+}
+
+func Tracef(format string, args ...interface{}) {
+	logf("TRACE", format, args...)
+}
+
 func Debugf(format string, args ...interface{}) {
 	logf("DEBUG", format, args...)
 }

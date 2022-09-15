@@ -8,6 +8,7 @@ import (
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
+	"github.com/owenrumney/lazytrivy/pkg/output"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
@@ -16,13 +17,13 @@ func (c *Controller) SetSelected(selected string) {
 	c.setSelected(strings.TrimSpace(selected))
 }
 
-func (c *Controller) ScanImage(ctx context.Context, imageName string) {
+func (c *Controller) ScanImage(ctx context.Context) {
 	var cancellable context.Context
 	c.Lock()
 	defer c.Unlock()
 	cancellable, c.ActiveCancel = context.WithCancel(ctx)
 	go func() {
-		report, err := c.DockerClient.ScanImage(cancellable, imageName, c)
+		report, err := c.DockerClient.ScanImage(cancellable, c.selectedImage, c)
 		if err != nil {
 			return
 		}
@@ -65,19 +66,60 @@ func (c *Controller) ScanAllImages(gui *gocui.Gui, _ *gocui.View) error {
 	c.Lock()
 	defer c.Unlock()
 	cancellable, c.ActiveCancel = context.WithCancel(context.Background())
-	go func() {
-		reports, err := c.DockerClient.ScanAllImages(cancellable, c)
+
+	if len(c.images) > 10 {
+		lines := []string{
+			fmt.Sprintf("Scanning %d images may take a while", len(c.images)), "",
+			"Press 't' to cancel if you get bored", "",
+		}
+
+		x, y := gui.Size()
+
+		announce := widgets.NewAnnouncementWidget(widgets.Announcement, "Caution", x, y, lines, c.Cui, widgets.Status)
+		if err := announce.Layout(gui); err != nil {
+			return err
+		}
+
+		_, err := gui.SetCurrentView(widgets.Announcement)
 		if err != nil {
+			return nil
+		}
+	}
+
+	go func() {
+		var reports []*output.Report
+
+		err := c.DockerClient.ScanAllImages(cancellable, c, func(report *output.Report) error {
+			reports = append(reports, report)
+			if err := c.RenderResultsReportSummary(reports); err != nil {
+				c.UpdateStatus(err.Error())
+				c.returnToResults()
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			c.returnToResults()
 			return
 		}
 		if err := c.RenderResultsReportSummary(reports); err != nil {
+			c.returnToResults()
 			c.UpdateStatus(err.Error())
 		}
 		c.UpdateStatus("All images scanned.")
-		_, _ = gui.SetCurrentView(widgets.Results)
+		c.returnToResults()
 
 	}()
 	return nil
+}
+
+func (c *Controller) returnToResults() {
+	_ = c.Cui.DeleteView(widgets.Announcement)
+
+	_, err := c.Cui.SetCurrentView(widgets.Results)
+	if err != nil {
+		logger.Errorf("failed to set current view: %v", err)
+	}
 }
 
 func (c *Controller) RefreshImages() error {

@@ -2,7 +2,7 @@ package widgets
 
 import (
 	"github.com/awesome-gocui/gocui"
-	component "github.com/owenrumney/gocui-component"
+	component "github.com/owenrumney/gocui-form"
 	"github.com/owenrumney/lazytrivy/pkg/config"
 )
 

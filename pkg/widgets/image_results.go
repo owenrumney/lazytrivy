@@ -71,6 +71,9 @@ func (w *ImageResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 		id := w.CurrentItemPosition()
 		if id >= 0 && id < len(w.reports) {
 			w.currentReport = w.reports[id]
+			if !w.currentReport.HasIssues() {
+				return nil
+			}
 		} else {
 			return nil
 		}
@@ -90,7 +93,8 @@ func (w *ImageResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, vuln, func(gui *gocui.Gui) error {
 			if len(w.v.BufferLines()) > 0 {
 				if image, _ := w.v.Line(0); image != "" {
-					w.ctx.ScanImage(context.Background(), image)
+					w.ctx.SetSelected(image)
+					w.ctx.ScanImage(context.Background())
 				}
 			}
 			gui.Mouse = true
@@ -180,7 +184,7 @@ func (w *ImageResultWidget) RenderReport(report *output.Report, severity string,
 			"No vulnerabilities found!",
 		}
 
-		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, cui)
+		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, cui, Images)
 		_ = announcement.Layout(cui)
 		_, _ = cui.SetCurrentView(Announcement)
 
