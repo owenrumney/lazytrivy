@@ -45,7 +45,12 @@ func (w *FilesWidget) ConfigureKeys(*gocui.Gui) error {
 		return fmt.Errorf("failed to set the previous image %w", err)
 	}
 
-	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, w.ctx.ScanVulnerabilities); err != nil {
+	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
+		w.body = []string{" Scanning... "}
+		w.RefreshView()
+		return w.ctx.ScanVulnerabilities(gui, view)
+
+	}); err != nil {
 
 	}
 
@@ -54,7 +59,8 @@ func (w *FilesWidget) ConfigureKeys(*gocui.Gui) error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		w.ctx.ShowTarget(context.Background(), w.SelectTarget())
+		w.ctx.SetSelected(w.SelectTarget())
+		w.ctx.ShowTarget(context.Background())
 		return nil
 	}); err != nil {
 		return fmt.Errorf("error setting keybinding for scanning image: %w", err)
@@ -109,11 +115,10 @@ func (w *FilesWidget) RefreshFiles(files []string, fileWidth int) error {
 }
 
 func (w *FilesWidget) SelectTarget() string {
-	_, y := w.v.Cursor()
-	if y >= len(w.body) {
+	if w.currentPos >= len(w.body) {
 		return ""
 	}
-	target := strings.TrimSpace(w.body[y])
+	target := strings.TrimSpace(w.body[w.currentPos])
 	parts := strings.Split(target, "|")
 	if len(parts) > 1 {
 		return strings.TrimSpace(parts[1])

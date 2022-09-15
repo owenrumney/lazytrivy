@@ -9,20 +9,26 @@ import (
 )
 
 type AnnouncementWidget struct {
-	name  string
-	x, y  int
-	w, h  int
-	body  []string
-	v     *gocui.View
-	title string
-	ctx   *gocui.Gui
+	name         string
+	x, y         int
+	w, h         int
+	body         []string
+	v            *gocui.View
+	title        string
+	ctx          *gocui.Gui
+	nextViewName string
 }
 
 func (w *AnnouncementWidget) RefreshView() {
 	panic("unimplemented")
 }
 
-func NewAnnouncementWidget(name, title string, width, height int, lines []string, ctx *gocui.Gui) *AnnouncementWidget {
+func NewAnnouncementWidget(name, title string, width, height int, lines []string, ctx *gocui.Gui, nextView ...string) *AnnouncementWidget {
+	nextViewName := Results
+	if len(nextView) > 0 {
+		nextViewName = nextView[0]
+	}
+
 	maxLength := 0
 
 	for _, item := range lines {
@@ -41,21 +47,22 @@ func NewAnnouncementWidget(name, title string, width, height int, lines []string
 	h := height/2 + maxHeight/2
 
 	return &AnnouncementWidget{
-		name:  name,
-		title: title,
-		x:     x,
-		y:     y,
-		w:     w,
-		h:     h,
-		body:  lines,
-		v:     nil,
-		ctx:   ctx,
+		name:         name,
+		title:        title,
+		x:            x,
+		y:            y,
+		w:            w,
+		h:            h,
+		body:         lines,
+		v:            nil,
+		nextViewName: nextViewName,
+		ctx:          ctx,
 	}
 }
 
 func (w *AnnouncementWidget) ConfigureKeys(*gocui.Gui) error {
 	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
-		if _, err := gui.SetCurrentView(Results); err != nil {
+		if _, err := gui.SetCurrentView(w.nextViewName); err != nil {
 			return err
 		}
 		return gui.DeleteView(w.name)
@@ -64,7 +71,7 @@ func (w *AnnouncementWidget) ConfigureKeys(*gocui.Gui) error {
 	}
 
 	if err := w.ctx.SetKeybinding(w.name, 'q', gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
-		if _, err := gui.SetCurrentView(Results); err != nil {
+		if _, err := gui.SetCurrentView(w.nextViewName); err != nil {
 			return err
 		}
 		return gui.DeleteView(w.name)
@@ -84,6 +91,7 @@ func (w *AnnouncementWidget) Layout(g *gocui.Gui) error {
 	v.Clear()
 	_, _ = fmt.Fprint(v, strings.Join(w.body, "\n"))
 	v.Title = fmt.Sprintf(" %s ", w.title)
+	v.Subtitle = " ESC to close "
 	v.Wrap = true
 	v.FrameColor = gocui.ColorGreen
 	w.v = v

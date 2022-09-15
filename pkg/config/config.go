@@ -30,6 +30,7 @@ type FileSystemConfig struct {
 	ScanSecrets          bool
 	ScanMisconfiguration bool
 	ScanVulnerabilities  bool
+	WorkingDirectory     string `json:"-"`
 }
 
 var defaultConfig *Config
@@ -88,6 +89,12 @@ func Load() (*Config, error) {
 		logger.Errorf("Error parsing config file: %s", err)
 		return defaultConfig, err
 	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	defaultConfig.Filesystem.WorkingDirectory = cwd
 
 	return defaultConfig, nil
 }

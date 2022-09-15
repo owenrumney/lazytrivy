@@ -25,7 +25,8 @@ func NewServicesWidget(name string, g awsContext) *ServicesWidget {
 
 	widget := &ServicesWidget{
 		ListWidget: ListWidget{
-			ctx: g,
+			ctx:                 g,
+			selectionChangeFunc: g.SetSelected,
 		},
 		name: name,
 		x:    0,
@@ -48,7 +49,7 @@ func (w *ServicesWidget) ConfigureKeys(*gocui.Gui) error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		w.ctx.ScanService(context.Background(), w.SelectedService())
+		w.ctx.ScanService(context.Background())
 		return nil
 	}); err != nil {
 		return fmt.Errorf("error setting keybinding for scanning image: %w", err)

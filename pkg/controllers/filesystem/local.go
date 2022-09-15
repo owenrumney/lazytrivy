@@ -96,8 +96,7 @@ func (c *Controller) scanVulnerabilities() error {
 	return nil
 }
 
-func (c *Controller) ShowTarget(_ context.Context, target string) {
-	c.currentTarget = target
+func (c *Controller) ShowTarget(_ context.Context) {
 	c.Cui.Update(func(gocui *gocui.Gui) error {
 		if err := c.RenderFilesystemFileReport(); err != nil {
 			return err

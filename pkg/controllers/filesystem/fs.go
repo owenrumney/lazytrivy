@@ -19,6 +19,7 @@ type Controller struct {
 
 func (c *Controller) SetWorkingDirectory(dir string) {
 	c.workingDireectory = dir
+	c.Config.Filesystem.WorkingDirectory = dir
 
 	if v, ok := c.Views[widgets.ScanPath]; ok {
 		if sp, ok := v.(*widgets.ScanPathWidget); ok {
@@ -27,9 +28,7 @@ func (c *Controller) SetWorkingDirectory(dir string) {
 	}
 }
 
-func NewFilesystemController(cui *gocui.Gui, dockerClient *docker.Client, cfg *config.Config, workingDir string) *Controller {
-
-	logger.Debugf("Creating new filesystem controller for %s", workingDir)
+func NewFilesystemController(cui *gocui.Gui, dockerClient *docker.Client, cfg *config.Config) *Controller {
 
 	return &Controller{
 		&base.Controller{
@@ -41,7 +40,7 @@ func NewFilesystemController(cui *gocui.Gui, dockerClient *docker.Client, cfg *c
 			Config:       cfg,
 		},
 		&state{
-			workingDireectory: workingDir,
+			workingDireectory: cfg.Filesystem.WorkingDirectory,
 		},
 	}
 }
@@ -99,11 +98,16 @@ func (c *Controller) Tab() widgets.Tab {
 }
 
 func (c *Controller) SetSelected(selected string) {
+	if v, ok := c.Views[widgets.Files].(*widgets.FilesWidget); ok {
+		c.currentTarget = v.SelectTarget()
+	}
+
 	c.currentTarget = selected
 }
 
 func (c *Controller) RenderFilesystemFileReport() error {
 	if v, ok := c.Views[widgets.Results].(*widgets.FSResultWidget); ok {
+		logger.Tracef("Rendering filesystem report for %s", c.currentTarget)
 		result, err := c.currentReport.GetResultForTarget(c.currentTarget)
 		if err != nil {
 			return err
