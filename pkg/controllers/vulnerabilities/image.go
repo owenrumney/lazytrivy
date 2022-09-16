@@ -69,7 +69,7 @@ func (c *Controller) ScanAllImages(gui *gocui.Gui, _ *gocui.View) error {
 
 	if len(c.images) > 10 {
 		lines := []string{
-			fmt.Sprintf("", "Scanning %d images may take a while", len(c.images)), "",
+			"", fmt.Sprintf("Scanning %d images may take a while", len(c.images)), "",
 			"Press 't' to terminate if you get bored", "",
 		}
 

@@ -13,14 +13,14 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/controllers/aws"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/vulnerabilities"
-	"github.com/owenrumney/lazytrivy/pkg/docker"
+	"github.com/owenrumney/lazytrivy/pkg/dockerClient"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
 type Controller struct {
 	sync.Mutex
 	cui              *gocui.Gui
-	dockerClient     *docker.Client
+	dockerClient     *dockerClient.Client
 	activeController base.ControllerView
 	views            []gocui.Manager
 	config           *config.Config
@@ -43,7 +43,7 @@ func New(tab widgets.Tab, cwd string) (*Controller, error) {
 		return nil, fmt.Errorf("failed to create gui: %w", err)
 	}
 
-	dockerClient := docker.NewClient()
+	dockerClient := dockerClient.NewClient()
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func New(tab widgets.Tab, cwd string) (*Controller, error) {
 	return mainController, nil
 }
 
-func (c *Controller) DockerClient() *docker.Client {
+func (c *Controller) DockerClient() *dockerClient.Client {
 	return c.dockerClient
 }
 
@@ -84,6 +84,9 @@ func (c *Controller) CreateWidgets() error {
 func (c *Controller) Initialise() error {
 	if c.config.Debug == true {
 		logger.EnableDebugging()
+	}
+	if c.config.Trace == true {
+		logger.EnableTracing()
 	}
 
 	if err := c.cui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, base.Quit); err != nil {
@@ -173,5 +176,25 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 	_ = choiceWidget.Layout(gui)
 	_, err := gui.SetCurrentView("mode")
 	return err
+
+}
+
+func (c *Controller) IsDockerDesktop() bool {
+	return c.dockerClient.IsDockerDesktop()
+}
+
+func (c *Controller) ShowDockerDesktopWarning() {
+	lines := []string{
+		"",
+		"It looks like you're using Docker Desktop!",
+		"Most functionality works, but scanning of locally built images is not supported.",
+		"",
+	}
+
+	x, y := c.cui.Size()
+	announcement := widgets.NewAnnouncementWidget(widgets.Announcement, "Warning", x, y, lines, c.cui)
+	if err := announcement.Layout(c.cui); err != nil {
+		logger.Errorf("failed to create announcement widget: %v", err)
+	}
 
 }

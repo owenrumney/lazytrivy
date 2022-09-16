@@ -70,32 +70,37 @@ func (c *Controller) scanVulnerabilities() error {
 			logger.Errorf("error scanning filesystem: %v", err)
 		}
 
-		c.currentReport = report
-
-		width := 20
-		var targets []string
-
-		for _, result := range report.Results {
-			if result.HasIssues() {
-				targets = append(targets, result.Target)
-			}
-		}
-		root := createRootDir(targets)
-
-		var lines []string
-		lines = root.generateTree(lines, -1)
-
-		for _, line := range lines {
-			parts := strings.Split(line, "|")
-			if len(parts[0]) > width {
-				width = len(parts[0])
-			}
-		}
-
 		select {
 		case <-cancellable.Done():
 
 		default:
+			if report == nil || report.Results == nil {
+				logger.Debugf("no results found, and report was nil")
+				return
+			}
+
+			c.currentReport = report
+
+			width := 20
+			var targets []string
+
+			for _, result := range report.Results {
+				if result.HasIssues() {
+					targets = append(targets, result.Target)
+				}
+			}
+			root := createRootDir(targets)
+
+			var lines []string
+			lines = root.generateTree(lines, -1)
+
+			for _, line := range lines {
+				parts := strings.Split(line, "|")
+				if len(parts[0]) > width {
+					width = len(parts[0])
+				}
+			}
+
 			logger.Debugf("Updating the files view with the identified services")
 			if v, ok := c.Views[widgets.Files].(*widgets.FilesWidget); ok {
 				if err := v.RefreshFiles(lines, width); err != nil {

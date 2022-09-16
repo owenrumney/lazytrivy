@@ -31,6 +31,8 @@ lazydocker, lazynpm, lazygit)
 
 In order for lazytrivy to be cross-platform, it uses the Trivy docker image. This means that you will need to have Docker running on your machine for lazytrivy to work.
 
+> :warning: Docker Desktop has degraded functionality. Locally built images not in a repository can not be scanned :warning:
+
 #### Install with Go
 
 The quickest way to install if you have `Go` installed is to get the latest with `go install`
