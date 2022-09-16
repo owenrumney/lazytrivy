@@ -26,16 +26,6 @@ type Controller struct {
 	config           *config.Config
 }
 
-func (c *Controller) SetSelected(_ string) {
-	// TODO implement me
-	panic("implement me")
-}
-
-func (c *Controller) RefreshView(_ string) {
-	// TODO implement me
-	panic("implement me")
-}
-
 func New(tab widgets.Tab, cwd string) (*Controller, error) {
 	logger.Debugf("Creating GUI")
 	cui, err := gocui.NewGui(gocui.OutputNormal, true)
@@ -197,4 +187,19 @@ func (c *Controller) ShowDockerDesktopWarning() {
 		logger.Errorf("failed to create announcement widget: %v", err)
 	}
 
+}
+
+func (c *Controller) UpdateStatus(status string) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (c *Controller) SetSelected(_ string) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (c *Controller) RefreshView(_ string) {
+	// TODO implement me
+	panic("implement me")
 }
