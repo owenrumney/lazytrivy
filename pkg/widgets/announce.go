@@ -64,9 +64,9 @@ func (w *AnnouncementWidget) ConfigureKeys(*gocui.Gui) error {
 	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, w.close); err != nil {
 		return err
 	}
-	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.close); err != nil {
-		return err
-	}
+	// if err := w.ctx.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.close); err != nil {
+	// 	return err
+	// }
 
 	if err := w.ctx.SetKeybinding(w.name, 'q', gocui.ModNone, w.close); err != nil {
 		return err

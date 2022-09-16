@@ -9,7 +9,6 @@ import (
 )
 
 func layout(g *gocui.Gui) error {
-	servicesWidth := 0
 	viewNames := []string{widgets.Services, widgets.Account, widgets.Results, widgets.Menu, widgets.Status}
 	maxX, maxY := g.Size()
 	x := 0
@@ -26,11 +25,10 @@ func layout(g *gocui.Gui) error {
 
 		switch v.Name() {
 		case widgets.Account:
-			nextW = servicesWidth
+			nextW = maxX - 1
 			nextX = 0
 			nextH = 2
 		case widgets.Services:
-			servicesWidth = w
 			y = 3
 		case widgets.Status:
 			nextW = maxX - 1
@@ -38,6 +36,7 @@ func layout(g *gocui.Gui) error {
 		case widgets.Results:
 			nextW = maxX - 1
 			nextH = maxY - 7
+			y = 3
 		case widgets.Menu:
 			nextX = 0
 			y = maxY - 4
