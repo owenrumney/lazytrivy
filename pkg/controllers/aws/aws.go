@@ -9,7 +9,7 @@ import (
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
-	"github.com/owenrumney/lazytrivy/pkg/docker"
+	"github.com/owenrumney/lazytrivy/pkg/dockerClient"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
@@ -23,7 +23,7 @@ type Controller struct {
 	*state
 }
 
-func NewAWSController(cui *gocui.Gui, dockerClient *docker.Client, cfg *config.Config) *Controller {
+func NewAWSController(cui *gocui.Gui, dockerClient *dockerClient.Client, cfg *config.Config) *Controller {
 
 	return &Controller{
 		&base.Controller{

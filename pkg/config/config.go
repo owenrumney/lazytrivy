@@ -14,6 +14,7 @@ type Config struct {
 	Filesystem     FileSystemConfig
 	CacheDirectory string `json:"-"`
 	Debug          bool
+	Trace          bool
 }
 
 type AWSConfig struct {
@@ -47,7 +48,7 @@ func init() {
 
 	defaultConfig = &Config{
 		CacheDirectory: trivyCacheDir,
-		Debug:          false,
+		Debug:          true,
 		AWS: AWSConfig{
 			CacheDirectory: awsCacheDir,
 		},

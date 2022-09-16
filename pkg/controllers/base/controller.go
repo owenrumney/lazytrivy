@@ -7,14 +7,14 @@ import (
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/config"
-	"github.com/owenrumney/lazytrivy/pkg/docker"
+	"github.com/owenrumney/lazytrivy/pkg/dockerClient"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
 type Controller struct {
 	sync.Mutex
 	Cui          *gocui.Gui
-	DockerClient *docker.Client
+	DockerClient *dockerClient.Client
 	Views        map[string]widgets.Widget
 	LayoutFunc   func(g *gocui.Gui) error
 	HelpFunc     func(g *gocui.Gui, v *gocui.View) error
