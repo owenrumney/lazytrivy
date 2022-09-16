@@ -27,6 +27,18 @@ type Controller struct {
 }
 
 func New(tab widgets.Tab, cwd string) (*Controller, error) {
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, err
+
+	}
+	if cfg.Debug {
+		logger.EnableDebugging()
+	}
+	if cfg.Trace {
+		logger.EnableTracing()
+	}
+
 	logger.Debugf("Creating GUI")
 	cui, err := gocui.NewGui(gocui.OutputNormal, true)
 	if err != nil {
@@ -34,10 +46,6 @@ func New(tab widgets.Tab, cwd string) (*Controller, error) {
 	}
 
 	dockerClient := dockerClient.NewClient()
-	cfg, err := config.Load()
-	if err != nil {
-		return nil, err
-	}
 
 	if cwd != "" {
 		cfg.Filesystem.WorkingDirectory = cwd
@@ -147,7 +155,6 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 		case "AWS":
 			c.activeController = aws.NewAWSController(c.cui, c.dockerClient, c.config)
 		case "File System":
-
 			c.activeController = filesystem.NewFilesystemController(c.cui, c.dockerClient, c.config)
 		default:
 			c.activeController = vulnerabilities.NewVulnerabilityController(c.cui, c.dockerClient, c.config)

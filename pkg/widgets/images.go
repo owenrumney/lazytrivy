@@ -91,6 +91,11 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 }
 
 func (w *ImagesWidget) RefreshImages(images []string, imageWidth int) error {
+	if len(images) == 0 {
+		w.ctx.UpdateStatus("No local images found")
+		return nil
+	}
+
 	w.w = imageWidth + 4
 
 	imageList := make([]string, len(images))

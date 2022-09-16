@@ -10,21 +10,23 @@ import (
 
 func main() {
 
+	cwd, err := os.Getwd()
+	if err != nil {
+		fail(err)
+	}
+
 	if len(os.Args) == 1 {
-		if err := startGUI(widgets.VulnerabilitiesTab, ""); err != nil {
+		if err := startGUI(widgets.VulnerabilitiesTab, cwd); err != nil {
 			fail(err)
 		}
 		return
 	} else if os.Args[1] == "aws" {
-		if err := startGUI(widgets.AWSTab, ""); err != nil {
+		if err := startGUI(widgets.AWSTab, cwd); err != nil {
 			fail(err)
 		}
 		return
 	} else if os.Args[1] == "fs" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			fail(err)
-		}
+
 		if len(os.Args) == 3 {
 			if _, err := os.Stat(os.Args[2]); err == nil {
 				cwd = os.Args[2]

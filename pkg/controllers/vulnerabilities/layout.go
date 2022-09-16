@@ -28,6 +28,7 @@ func vulnerabilityLayout(g *gocui.Gui) error {
 		switch v.Name() {
 		case widgets.Host:
 			nextW = imagesWidth
+			nextW = maxX - 1
 			nextX = 0
 			nextH = 2
 		case widgets.Images:
@@ -39,6 +40,7 @@ func vulnerabilityLayout(g *gocui.Gui) error {
 		case widgets.Results:
 			nextW = maxX - 1
 			nextH = maxY - 7
+			y = 3
 		case widgets.Menu:
 			nextX = 0
 			y = maxY - 4

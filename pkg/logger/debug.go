@@ -14,7 +14,15 @@ var (
 
 func EnableDebugging() {
 	debugEnabled = true
-	logFile := filepath.Join(os.TempDir(), "lazytrivy.log")
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = "/"
+	}
+	logDir := filepath.Join(home, ".lazytrivy", "logs")
+	_ = os.MkdirAll(logDir, os.ModePerm)
+
+	logFile := filepath.Join(logDir, "lazytrivy.log")
 	debugFile, _ = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600) // nolint: nosnakecase
 }
 

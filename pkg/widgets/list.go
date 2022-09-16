@@ -83,7 +83,7 @@ func (w *ListWidget) nextItem(_ *gocui.Gui, v *gocui.View) error {
 }
 
 func (w *ListWidget) CurrentItemPosition() int {
-	if len(w.body) == 0 {
+	if len(w.body) == 0 || w.currentPos >= len(w.body) {
 		return -1
 	}
 

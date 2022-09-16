@@ -39,7 +39,7 @@ func NewClient() *Client {
 		logger.Errorf("Error getting docker context: %s", err)
 	}
 
-	logger.Debugf("Creating docker client")
+	logger.Debugf("Creating docker client for endpoint %s", endpoint)
 
 	cli, err := client.NewClientWithOpts(client.WithHost(endpoint), client.WithAPIVersionNegotiation())
 	if err != nil {

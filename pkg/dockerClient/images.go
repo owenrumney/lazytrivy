@@ -34,6 +34,7 @@ func (c *Client) ListImages() []string {
 			} else if strings.HasPrefix(imageName, "lazytrivy") {
 				logger.Debugf("Found lazy trivy image %s", imageName)
 				c.lazyTrivyImagePresent = true
+				continue
 			} else if strings.HasPrefix(imageName, "<none>:") {
 				// we don't need to be showing these
 				continue
