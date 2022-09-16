@@ -48,7 +48,7 @@ func init() {
 
 	defaultConfig = &Config{
 		CacheDirectory: trivyCacheDir,
-		Debug:          true,
+		Debug:          false,
 		AWS: AWSConfig{
 			CacheDirectory: awsCacheDir,
 		},

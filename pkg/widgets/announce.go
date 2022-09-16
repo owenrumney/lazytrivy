@@ -61,24 +61,25 @@ func NewAnnouncementWidget(name, title string, width, height int, lines []string
 }
 
 func (w *AnnouncementWidget) ConfigureKeys(*gocui.Gui) error {
-	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
-		if _, err := gui.SetCurrentView(w.nextViewName); err != nil {
-			return err
-		}
-		return gui.DeleteView(w.name)
-	}); err != nil {
+	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, w.close); err != nil {
+		return err
+	}
+	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.close); err != nil {
 		return err
 	}
 
-	if err := w.ctx.SetKeybinding(w.name, 'q', gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
-		if _, err := gui.SetCurrentView(w.nextViewName); err != nil {
-			return err
-		}
-		return gui.DeleteView(w.name)
-	}); err != nil {
+	if err := w.ctx.SetKeybinding(w.name, 'q', gocui.ModNone, w.close); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (w *AnnouncementWidget) close(gui *gocui.Gui, _ *gocui.View) error {
+	if _, err := gui.SetCurrentView(w.nextViewName); err != nil {
+		return err
+	}
+	return gui.DeleteView(w.name)
+
 }
 
 func (w *AnnouncementWidget) Layout(g *gocui.Gui) error {

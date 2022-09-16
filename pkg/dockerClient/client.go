@@ -43,7 +43,14 @@ func NewClient() *Client {
 
 	cli, err := client.NewClientWithOpts(client.WithHost(endpoint), client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		fmt.Printf("Error creating docker client: %s", err)
+	}
+
+	if _, err := cli.ContainerList(context.Background(), types.ContainerListOptions{}); err != nil {
+		if strings.Contains(err.Error(), "Is the docker daemon running?") {
+			fmt.Println("Error connecting to docker daemon. Is it running?")
+			os.Exit(1)
+		}
 	}
 
 	socketPath := strings.TrimPrefix(endpoint, "unix://")

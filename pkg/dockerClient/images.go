@@ -18,7 +18,8 @@ func (c *Client) ListImages() []string {
 		Filters: filters.Args{},
 	})
 	if err != nil {
-		panic(err)
+		logger.Errorf("Error listing images: %s", err)
+		return nil
 	}
 
 	var imageNames []string
