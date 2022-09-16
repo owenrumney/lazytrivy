@@ -14,6 +14,7 @@ type Config struct {
 	Filesystem     FileSystemConfig
 	CacheDirectory string `json:"-"`
 	Debug          bool
+	Trace          bool
 }
 
 type AWSConfig struct {

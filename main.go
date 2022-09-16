@@ -68,6 +68,10 @@ func startGUI(tab widgets.Tab, workingDir string) error {
 		return err
 	}
 
+	if control.IsDockerDesktop() {
+		control.ShowDockerDesktopWarning()
+	}
+
 	// Enter the run loop - it's all in the gui from this point on
 	if err := control.Run(); err != nil {
 		fail(err)
