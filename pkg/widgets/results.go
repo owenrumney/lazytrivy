@@ -33,8 +33,9 @@ func NewResultsWidget(name string, generateReportFunc func(severity string, gui 
 	updateResultsTableFunc func(reports []*output.Report, g *gocui.Gui), g baseContext) ResultsWidget {
 	widget := ResultsWidget{
 		ListWidget: ListWidget{
-			ctx:  g,
-			body: []string{},
+			ctx:                 g,
+			body:                []string{},
+			selectionChangeFunc: g.SetSelected,
 		},
 		name:                   name,
 		generateReportFunc:     generateReportFunc,

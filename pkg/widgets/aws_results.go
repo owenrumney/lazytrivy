@@ -171,7 +171,7 @@ func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.
 			"No misconfigurations found!",
 		}
 
-		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, g)
+		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, g, Services)
 		_ = announcement.Layout(g)
 		_, _ = g.SetCurrentView(Announcement)
 
