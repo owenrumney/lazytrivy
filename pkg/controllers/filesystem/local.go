@@ -59,39 +59,52 @@ func (c *Controller) scanVulnerabilities() error {
 		scanChecks = append(scanChecks, "secret")
 	}
 
-	report, err := c.DockerClient.ScanFilesystem(context.TODO(), c.workingDireectory, scanChecks, c)
-	if err != nil {
-		return err
-	}
+	go func() {
+		var cancellable context.Context
+		c.Lock()
+		defer c.Unlock()
+		cancellable, c.ActiveCancel = context.WithCancel(context.Background())
 
-	c.currentReport = report
-
-	width := 20
-	var targets []string
-
-	for _, result := range report.Results {
-		if result.HasIssues() {
-			targets = append(targets, result.Target)
+		report, err := c.DockerClient.ScanFilesystem(cancellable, c.workingDireectory, scanChecks, c)
+		if err != nil {
+			logger.Errorf("error scanning filesystem: %v", err)
 		}
-	}
-	root := createRootDir(targets)
 
-	var lines []string
-	lines = root.generateTree(lines, -1)
+		c.currentReport = report
 
-	for _, line := range lines {
-		parts := strings.Split(line, "|")
-		if len(parts[0]) > width {
-			width = len(parts[0])
+		width := 20
+		var targets []string
+
+		for _, result := range report.Results {
+			if result.HasIssues() {
+				targets = append(targets, result.Target)
+			}
 		}
-	}
+		root := createRootDir(targets)
 
-	logger.Debugf("Updating the files view with the identified services")
-	if v, ok := c.Views[widgets.Files].(*widgets.FilesWidget); ok {
-		if err := v.RefreshFiles(lines, width); err != nil {
-			return err
+		var lines []string
+		lines = root.generateTree(lines, -1)
+
+		for _, line := range lines {
+			parts := strings.Split(line, "|")
+			if len(parts[0]) > width {
+				width = len(parts[0])
+			}
 		}
-	}
+
+		select {
+		case <-cancellable.Done():
+
+		default:
+			logger.Debugf("Updating the files view with the identified services")
+			if v, ok := c.Views[widgets.Files].(*widgets.FilesWidget); ok {
+				if err := v.RefreshFiles(lines, width); err != nil {
+					logger.Errorf("error refreshing the files view: %v", err)
+				}
+			}
+		}
+
+	}()
 
 	return nil
 }
