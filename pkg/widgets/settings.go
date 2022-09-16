@@ -43,7 +43,7 @@ func (w *SettingsWidget) Draw() {
 	w.form.AddButton("Save", func(gui *gocui.Gui, view *gocui.View) error {
 
 		w.cfg.Debug = w.form.GetCheckBoxState("  Enable Debugging")
-		w.cfg.CacheDirectory = w.form.GetFieldText("  Cache Directory")
+		w.cfg.CacheDirectory = w.form.GetFieldText("  Trivy Cache")
 		w.cfg.Filesystem.ScanVulnerabilities = w.form.GetCheckBoxState("  Scan Vulnerabilities")
 		w.cfg.Filesystem.ScanMisconfiguration = w.form.GetCheckBoxState("  Scan Misconfigs")
 		w.cfg.Filesystem.ScanSecrets = w.form.GetCheckBoxState("  Show Secrets")
