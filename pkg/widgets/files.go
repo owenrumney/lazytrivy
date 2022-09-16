@@ -47,7 +47,6 @@ func (w *FilesWidget) ConfigureKeys(*gocui.Gui) error {
 
 	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		w.body = []string{" Scanning... "}
-		w.RefreshView()
 		return w.ctx.ScanVulnerabilities(gui, view)
 
 	}); err != nil {
@@ -108,7 +107,7 @@ func (w *FilesWidget) RefreshFiles(files []string, fileWidth int) error {
 	}
 	w.body = files
 	w.v.Highlight = true
-	w.RefreshView()
+	w.ctx.RefreshView(Files)
 	_ = w.v.SetCursor(0, 0)
 	return nil
 

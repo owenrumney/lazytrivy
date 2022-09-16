@@ -11,7 +11,7 @@ import (
 var helpCommands = []string{
 	"",
 	tml.Sprintf(" <blue>[s]</blue>can/update        Scan filesystem"),
-	tml.Sprintf(" <blue>[c]</blue>hange directory   Change target directory"),
+	tml.Sprintf(" change <blue>[p]</blue>ath        Change target directory"),
 	"",
 }
 

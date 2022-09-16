@@ -146,7 +146,6 @@ func (c *Controller) RenderFilesystemFileReportd(report *output.Report) error {
 	return fmt.Errorf("failed to render results report summary") //nolint:goerr113
 }
 
-func (c *Controller) ScanVulnerabilities(*gocui.Gui, *gocui.View) error {
-	c.UpdateStatus(fmt.Sprintf("Scanning %s", c.workingDireectory))
+func (c *Controller) ScanVulnerabilities(g *gocui.Gui, _ *gocui.View) error {
 	return c.scanVulnerabilities()
 }
