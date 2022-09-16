@@ -19,7 +19,7 @@ type ImageResultWidget struct {
 
 	ctx             vulnerabilityContext
 	reports         []*output.Report
-	vulnerabilities []output.Vulnerability
+	vulnerabilities []output.Issue
 }
 
 func NewImageResultWidget(name string, g vulnerabilityContext) *ImageResultWidget {
@@ -82,7 +82,7 @@ func (w *ImageResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 	case DetailsResultMode:
 		x, y, wi, h := v.Dimensions()
 
-		var vuln output.Vulnerability
+		var vuln output.Issue
 		id := w.CurrentItemPosition()
 		if id >= 0 && id < len(w.vulnerabilities) {
 			vuln = w.vulnerabilities[id]
@@ -201,7 +201,7 @@ func (w *ImageResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui
 		return
 	}
 	w.mode = DetailsResultMode
-	w.vulnerabilities = []output.Vulnerability{}
+	w.vulnerabilities = []output.Issue{}
 
 	var severities []string
 	if w.reports != nil && len(w.reports) > 0 {
@@ -229,7 +229,7 @@ func (w *ImageResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui
 	vulnCounter := 0
 
 	for _, result := range results {
-		if len(result.Vulnerabilities) == 0 {
+		if len(result.Issues) == 0 {
 			continue
 		}
 
@@ -237,14 +237,14 @@ func (w *ImageResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui
 		bodyContent = append(bodyContent, tml.Sprintf("<bold>Target:</bold> <blue>%s</blue>", result.Target))
 		bodyContent = append(bodyContent, "")
 
-		sort.Slice(result.Vulnerabilities, func(i, j int) bool {
-			return severityAsInt(result.Vulnerabilities[i].Severity) < severityAsInt(result.Vulnerabilities[j].Severity) //nolint:scopelint
+		sort.Slice(result.Issues, func(i, j int) bool {
+			return severityAsInt(result.Issues[i].GetSeverity()) < severityAsInt(result.Issues[j].GetSeverity()) //nolint:scopelint
 		})
 
-		for _, v := range result.Vulnerabilities {
-			f, b := colouredSeverity(v.Severity)
-			toPrint := fmt.Sprintf("**%d***  %s % -16s %s", vulnCounter, tml.Sprintf(f+"% -10s"+b, v.Severity),
-				v.VulnerabilityID, v.Title)
+		for _, v := range result.Issues {
+			f, b := colouredSeverity(v.GetSeverity())
+			toPrint := fmt.Sprintf("**%d***  %s % -16s %s", vulnCounter, tml.Sprintf(f+"% -10s"+b, v.GetSeverity()),
+				v.GetID(), v.GetTitle())
 
 			bodyContent = append(bodyContent, toPrint)
 			w.vulnerabilities = append(w.vulnerabilities, v)

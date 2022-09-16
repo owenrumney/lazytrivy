@@ -119,10 +119,10 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	}
 
 	// make sure we kill the container
-	// defer func() {
-	// 	logger.Debugf("Removing container %s", cont.ID)
-	// 	_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
-	// }()
+	defer func() {
+		logger.Debugf("Removing container %s", cont.ID)
+		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
+	}()
 
 	if err := c.client.ContainerStart(ctx, cont.ID, types.ContainerStartOptions{}); err != nil {
 		return nil, err
