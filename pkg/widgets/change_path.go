@@ -3,6 +3,7 @@ package widgets
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/awesome-gocui/gocui"
 )
@@ -23,7 +24,14 @@ func NewPathChangeWidget(name string, maxX, maxY, maxLength int, currentPath str
 	if err := ctx.SetKeyBinding(PathChange, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		if len(view.BufferLines()) > 0 {
 			if workingDirectory, _ := view.Line(0); workingDirectory != "" {
-				ctx.SetWorkingDirectory(workingDirectory)
+				if _, err := os.Stat(workingDirectory); err == nil {
+					ctx.SetWorkingDirectory(workingDirectory)
+				} else {
+					if os.IsNotExist(err) {
+						ctx.UpdateStatus(fmt.Sprintf("Nope, %s does not exist", workingDirectory))
+					}
+				}
+
 			}
 		}
 		gui.Mouse = true
