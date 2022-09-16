@@ -60,9 +60,6 @@ func (c *Client) IsDockerDesktop() bool {
 }
 
 func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress, scanImageName string, additionalBinds ...string) (*output.Report, error) {
-	if c.endpoint != "unix:///var/run/docker.sock" {
-		scanImageName = "lazytrivy:1.0.0"
-	}
 
 	switch scanImageName {
 	case "lazytrivy:1.0.0":
@@ -95,7 +92,8 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	cachePath := filepath.Join(userHomeDir, ".cache")
 
 	binds := []string{
-		fmt.Sprintf("%s:/var/run/docker.sock", c.socketPath),
+		// fmt.Sprintf("%s:/var/run/docker.sock", c.socketPath),
+		"/var/run/docker.sock:/var/run/docker.sock",
 		fmt.Sprintf("%s:/root/.cache", cachePath),
 	}
 
@@ -200,7 +198,8 @@ func (c *Client) buildScannerImage(ctx context.Context) (*output.Report, error) 
 		return nil, err
 	}
 
-	_, _ = io.Copy(io.Discard, resp.Body)
+	buffer := bytes.NewBufferString("")
+	_, _ = io.Copy(buffer, resp.Body)
 	if err := resp.Body.Close(); err != nil {
 		return nil, err
 	}
