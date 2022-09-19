@@ -84,21 +84,7 @@ func (w *AWSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
 			return nil
 		}
 
-		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, issue, func(gui *gocui.Gui) error {
-			gui.Mouse = true
-			gui.Cursor = false
-
-			if err := gui.DeleteView(Remote); err != nil {
-				return fmt.Errorf("failed to delete view 'remote': %w", err)
-			}
-			if _, err := gui.SetCurrentView(Results); err != nil {
-				return fmt.Errorf("failed to switch view to 'results': %w", err)
-			}
-
-			w.GenerateFilteredReport("ALL", gui)
-			return nil
-
-		})
+		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, issue)
 
 		if err != nil {
 			return err

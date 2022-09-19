@@ -84,7 +84,7 @@ func (w *FSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
 			return nil
 		}
 
-		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, issue, nil)
+		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, issue)
 		if err != nil {
 			return err
 		}

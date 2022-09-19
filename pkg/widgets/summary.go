@@ -17,12 +17,7 @@ type SummaryWidget struct {
 	issue output.Issue
 }
 
-func NewSummaryWidget(name string, x, y, w, h int, ctx baseContext, issue output.Issue, selectFunc func(gui *gocui.Gui) error) (*SummaryWidget, error) {
-	if err := ctx.SetKeyBinding(Remote, gocui.KeyEnter, gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
-		return selectFunc(gui)
-	}); err != nil {
-		return nil, fmt.Errorf("%w", err)
-	}
+func NewSummaryWidget(name string, x, y, w, h int, ctx baseContext, issue output.Issue) (*SummaryWidget, error) {
 
 	// override the default keybindings
 	_ = ctx.SetKeyBinding(Summary, 'a', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error { return nil })
