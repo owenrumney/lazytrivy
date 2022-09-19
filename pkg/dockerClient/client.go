@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
@@ -32,11 +33,15 @@ type Client struct {
 	lazyTrivyImagePresent bool
 }
 
-func NewClient() *Client {
+func NewClient(cfg *config.Config) *Client {
 
 	endpoint, _, err := getHostEndpoint()
 	if err != nil {
 		logger.Errorf("Error getting docker context: %s", err)
+	}
+
+	if cfg.DockerEndpoint != "" {
+		endpoint = cfg.DockerEndpoint
 	}
 
 	logger.Debugf("Creating docker client for endpoint %s", endpoint)

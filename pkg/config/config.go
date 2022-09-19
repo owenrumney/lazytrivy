@@ -15,6 +15,7 @@ type Config struct {
 	CacheDirectory string `json:"-"`
 	Debug          bool
 	Trace          bool
+	DockerEndpoint string
 }
 
 type AWSConfig struct {
