@@ -26,18 +26,7 @@ type Controller struct {
 	config           *config.Config
 }
 
-func New(tab widgets.Tab, cwd string) (*Controller, error) {
-	cfg, err := config.Load()
-	if err != nil {
-		return nil, err
-
-	}
-	if cfg.Debug {
-		logger.EnableDebugging()
-	}
-	if cfg.Trace {
-		logger.EnableTracing()
-	}
+func New(tab widgets.Tab, cfg *config.Config) (*Controller, error) {
 
 	logger.Debugf("Creating GUI")
 	cui, err := gocui.NewGui(gocui.OutputNormal, true)
@@ -45,26 +34,22 @@ func New(tab widgets.Tab, cwd string) (*Controller, error) {
 		return nil, fmt.Errorf("failed to create gui: %w", err)
 	}
 
-	dockerClient := dockerClient.NewClient()
-
-	if cwd != "" {
-		cfg.Filesystem.WorkingDirectory = cwd
-	}
+	dkrClient := dockerClient.NewClient(cfg)
 
 	mainController := &Controller{
 		cui:          cui,
-		dockerClient: dockerClient,
+		dockerClient: dkrClient,
 
 		config: cfg,
 	}
 
 	switch tab {
 	case widgets.AWSTab:
-		mainController.activeController = aws.NewAWSController(cui, dockerClient, cfg)
+		mainController.activeController = aws.NewAWSController(cui, dkrClient, cfg)
 	case widgets.FileSystemTab:
-		mainController.activeController = filesystem.NewFilesystemController(cui, dockerClient, cfg)
+		mainController.activeController = filesystem.NewFilesystemController(cui, dkrClient, cfg)
 	default:
-		mainController.activeController = vulnerabilities.NewVulnerabilityController(cui, dockerClient, cfg)
+		mainController.activeController = vulnerabilities.NewVulnerabilityController(cui, dkrClient, cfg)
 
 	}
 
