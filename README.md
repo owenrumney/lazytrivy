@@ -74,7 +74,7 @@ You can start `lazytrivy` in a specific mode using `aws`, `images` or `filesyste
 For example, to scan a specific filesystem folder, you could run:
 
 ```bash
-lazytrivy fs /home/owen/code/github/owenrumney/example
+lazytrivy fs --path /home/owen/code/github/owenrumney/example
 ```
 
 This will start in that mode.
