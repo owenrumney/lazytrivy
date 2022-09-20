@@ -1,10 +1,18 @@
 package main
 
-import "github.com/owenrumney/lazytrivy/internal/cmd"
+import (
+	"os"
+
+	"github.com/owenrumney/lazytrivy/internal/cmd"
+)
 
 func main() {
 
-	rootCmd := cmd.GetRootCmd()
+	// if no args are passed, open in image mode
+	if len(os.Args[1:]) == 0 {
+		os.Args = append(os.Args, "image")
+	}
 
+	rootCmd := cmd.GetRootCmd()
 	_ = rootCmd.Execute()
 }
