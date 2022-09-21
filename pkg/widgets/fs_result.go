@@ -149,7 +149,6 @@ func (w *FSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.G
 	w.body = []string{}
 
 	if w.currentReport == nil || !w.currentReport.HasIssues() {
-		width, height := w.v.Size()
 
 		lines := []string{
 			"Great News!",
@@ -157,7 +156,7 @@ func (w *FSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.G
 			"No misconfigurations found!",
 		}
 
-		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, g)
+		announcement := NewAnnouncementWidget(Announcement, "No Results", lines, g)
 		_ = announcement.Layout(g)
 		_, _ = g.SetCurrentView(Announcement)
 

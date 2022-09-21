@@ -109,6 +109,8 @@ func (w *FilesWidget) RefreshFiles(files []string, fileWidth int) error {
 	w.v.Highlight = true
 	w.ctx.RefreshView(Files)
 	_ = w.v.SetCursor(0, 0)
+	w.ctx.SetSelected(w.SelectTarget())
+	w.ctx.ShowTarget(context.Background())
 	return nil
 
 }

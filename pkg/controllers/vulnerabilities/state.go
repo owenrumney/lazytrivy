@@ -9,12 +9,12 @@ type state struct {
 	imageWidth    int
 }
 
-func (s *state) updateImages(images []string) {
+func (s *state) updateImages(images []string, maxWidth int) {
 	s.stateLock.Lock()
 	defer s.stateLock.Unlock()
 	s.images = images
 
-	s.imageWidth = getLongestImageName(images)
+	s.imageWidth = getLongestImageName(images, maxWidth)
 	s.selectedImage = ""
 }
 
@@ -24,10 +24,10 @@ func (s *state) setSelected(selectedImage string) {
 	s.selectedImage = selectedImage
 }
 
-func getLongestImageName(images []string) int {
+func getLongestImageName(images []string, maxWidth int) int {
 	imageWidth := 0
 	for _, image := range images {
-		if len(image) > imageWidth {
+		if len(image) > imageWidth && len(image) < maxWidth {
 			imageWidth = len(image)
 		}
 	}

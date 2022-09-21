@@ -13,7 +13,10 @@ import (
 )
 
 func (c *Controller) SetSelected(selected string) {
-	logger.Debugf("Setting selected image to %s", selected)
+	if selected == "" {
+		return
+	}
+	c.UpdateStatus(fmt.Sprintf("Selected: %s", selected))
 	c.setSelected(strings.TrimSpace(selected))
 }
 
@@ -73,9 +76,7 @@ func (c *Controller) ScanAllImages(gui *gocui.Gui, _ *gocui.View) error {
 			"Press 't' to terminate if you get bored", "",
 		}
 
-		x, y := gui.Size()
-
-		announce := widgets.NewAnnouncementWidget(widgets.Announcement, "Caution", x, y, lines, c.Cui, widgets.Status)
+		announce := widgets.NewAnnouncementWidget(widgets.Announcement, "Caution", lines, c.Cui, widgets.Status)
 		if err := announce.Layout(gui); err != nil {
 			return err
 		}
@@ -123,13 +124,14 @@ func (c *Controller) returnToResults() {
 }
 
 func (c *Controller) RefreshImages() error {
-	logger.Debugf("refreshing images")
 	c.UpdateStatus("Refreshing images")
 	defer c.ClearStatus()
 
 	images := c.DockerClient.ListImages()
-	logger.Debugf("found %d images", len(images))
-	c.updateImages(images)
+
+	w, _ := c.Cui.Size()
+
+	c.updateImages(images, w/4)
 
 	if v, ok := c.Views[widgets.Images].(*widgets.ImagesWidget); ok {
 		return v.RefreshImages(c.images, c.imageWidth)

@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
 func (c *Client) ScanFilesystem(ctx context.Context, path string, requiredChecks []string, progress Progress) (*output.Report, error) {
-	logger.Debugf("Scanning filesystem %s", path)
 	checks := strings.Join(requiredChecks, ",")
-
 	progress.UpdateStatus(fmt.Sprintf("Scanning filesystem %s...", path))
 	command := []string{"fs", "--quiet", "--security-checks", checks, "-f=json", "/target"}
 

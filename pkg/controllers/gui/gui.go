@@ -34,13 +34,15 @@ func New(tab widgets.Tab, cfg *config.Config) (*Controller, error) {
 		return nil, fmt.Errorf("failed to create gui: %w", err)
 	}
 
-	dkrClient := dockerClient.NewClient(cfg)
+	dkrClient, err := dockerClient.NewClient(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	mainController := &Controller{
 		cui:          cui,
 		dockerClient: dkrClient,
-
-		config: cfg,
+		config:       cfg,
 	}
 
 	switch tab {
@@ -66,7 +68,7 @@ func (c *Controller) CreateWidgets() error {
 
 func (c *Controller) Initialise() error {
 	if c.config.Debug == true {
-		logger.EnableDebugging()
+		logger.Configure()
 	}
 	if c.config.Trace == true {
 		logger.EnableTracing()
@@ -158,26 +160,6 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 	_ = choiceWidget.Layout(gui)
 	_, err := gui.SetCurrentView("mode")
 	return err
-
-}
-
-func (c *Controller) IsDockerDesktop() bool {
-	return c.dockerClient.IsDockerDesktop()
-}
-
-func (c *Controller) ShowDockerDesktopWarning() {
-	lines := []string{
-		"",
-		"It looks like you're using Docker Desktop!",
-		"Most functionality works, but scanning of locally built images is not supported.",
-		"",
-	}
-
-	x, y := c.cui.Size()
-	announcement := widgets.NewAnnouncementWidget(widgets.Announcement, "Warning", x, y, lines, c.cui)
-	if err := announcement.Layout(c.cui); err != nil {
-		logger.Errorf("failed to create announcement widget: %v", err)
-	}
 
 }
 

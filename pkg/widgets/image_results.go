@@ -157,7 +157,6 @@ func (w *ImageResultWidget) RenderReport(report *output.Report, severity string,
 	w.body = []string{}
 
 	if w.currentReport == nil || !w.currentReport.HasIssues() {
-		width, height := w.v.Size()
 
 		lines := []string{
 			"Great News!",
@@ -165,7 +164,7 @@ func (w *ImageResultWidget) RenderReport(report *output.Report, severity string,
 			"No vulnerabilities found!",
 		}
 
-		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, cui, Images)
+		announcement := NewAnnouncementWidget(Announcement, "No Results", lines, cui, Images)
 		_ = announcement.Layout(cui)
 		_, _ = cui.SetCurrentView(Announcement)
 

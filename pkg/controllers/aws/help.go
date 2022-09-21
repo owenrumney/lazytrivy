@@ -17,10 +17,7 @@ var helpCommands = []string{
 }
 
 func help(gui *gocui.Gui, _ *gocui.View) error {
-
-	w, h := gui.Size()
-
-	v := widgets.NewAnnouncementWidget("help", "Help", w, h, helpCommands, gui)
+	v := widgets.NewAnnouncementWidget("help", "Help", helpCommands, gui)
 
 	if err := gui.SetKeybinding("help", gocui.KeyEsc, gocui.ModNone, func(gui *gocui.Gui, _ *gocui.View) error {
 		if _, err := gui.SetCurrentView("services"); err != nil {

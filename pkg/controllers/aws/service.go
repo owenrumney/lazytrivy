@@ -47,6 +47,26 @@ func (c *Controller) ScanService(_ context.Context) {
 	})
 }
 
+func (c *Controller) UpdateAccount(account string) error {
+	logger.Debugf("Updating the AWS account details in the config")
+	c.Config.AWS.AccountNo = account
+	c.Config.AWS.Region = "us-east-1"
+	if err := c.Config.Save(); err != nil {
+		return err
+	}
+
+	return c.update()
+}
+
+func (c *Controller) UpdateRegion(region string) error {
+	logger.Debugf("Updating the AWS region details in the config")
+	c.Config.AWS.Region = region
+	if err := c.Config.Save(); err != nil {
+		return err
+	}
+	return c.update()
+}
+
 func (c *Controller) CancelCurrentScan(_ *gocui.Gui, _ *gocui.View) error {
 	c.Lock()
 	defer c.Unlock()
@@ -55,6 +75,22 @@ func (c *Controller) CancelCurrentScan(_ *gocui.Gui, _ *gocui.View) error {
 		c.UpdateStatus("Current scan cancelled.")
 		c.ActiveCancel()
 		c.ActiveCancel = nil
+	}
+	return nil
+}
+
+func (c *Controller) refreshServices() error {
+	logger.Debugf("getting caches services")
+	services, err := c.accountRegionCacheServices(c.Config.AWS.AccountNo, c.Config.AWS.Region)
+	if err != nil {
+		return err
+	}
+
+	logger.Debugf("Updating the services view with the identified services")
+	if v, ok := c.Views[widgets.Services].(*widgets.ServicesWidget); ok {
+		if err := v.RefreshServices(services, 20); err != nil {
+			return err
+		}
 	}
 	return nil
 }

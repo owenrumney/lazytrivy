@@ -33,11 +33,12 @@ type Client struct {
 	lazyTrivyImagePresent bool
 }
 
-func NewClient(cfg *config.Config) *Client {
+func NewClient(cfg *config.Config) (*Client, error) {
 
 	endpoint, _, err := getHostEndpoint()
 	if err != nil {
 		logger.Errorf("Error getting docker context: %s", err)
+		return nil, err
 	}
 
 	if cfg.DockerEndpoint != "" {
@@ -48,7 +49,9 @@ func NewClient(cfg *config.Config) *Client {
 
 	cli, err := client.NewClientWithOpts(client.WithHost(endpoint), client.WithAPIVersionNegotiation())
 	if err != nil {
-		fmt.Printf("Error creating docker client: %s", err)
+		logger.Errorf("Error creating docker client: %s", err)
+		return nil, err
+
 	}
 
 	if _, err := cli.ContainerList(context.Background(), types.ContainerListOptions{}); err != nil {
@@ -64,11 +67,7 @@ func NewClient(cfg *config.Config) *Client {
 		client:     cli,
 		endpoint:   endpoint,
 		socketPath: socketPath,
-	}
-}
-
-func (c *Client) IsDockerDesktop() bool {
-	return strings.Contains(strings.ToLower(c.endpoint), "desktop")
+	}, nil
 }
 
 func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress, scanImageName string, additionalBinds ...string) (*output.Report, error) {
@@ -93,11 +92,11 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 			_, _ = io.Copy(io.Discard, resp)
 		}
 	}
-	logger.Debugf("Running trivy scan with command %s", command)
+	logger.Tracef("Running trivy scan with command %s", command)
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		logger.Debugf("Error getting user home dir: %s", err)
+		logger.Errorf("Error getting user home dir: %s", err)
 		userHomeDir = os.TempDir()
 	}
 
@@ -132,7 +131,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 
 	// make sure we kill the container
 	defer func() {
-		logger.Debugf("Removing container %s", cont.ID)
+		logger.Tracef("Removing container %s", cont.ID)
 		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
 	}()
 

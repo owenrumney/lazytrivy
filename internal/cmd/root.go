@@ -22,8 +22,9 @@ var cmdAWS = &cobra.Command{
 }
 
 var cmdFS = &cobra.Command{
-	Use:   "filesystem",
-	Short: "Launch lazytrivy in filesystem scanning mode",
+	Use:     "filesystem",
+	Aliases: []string{"fs"},
+	Short:   "Launch lazytrivy in filesystem scanning mode",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return startGUI(widgets.FileSystemTab)
 	},
@@ -43,9 +44,14 @@ func GetRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use: "lazytrivy",
 	}
+
 	rootCmd.AddCommand(cmdImage)
 	rootCmd.AddCommand(cmdAWS)
 	rootCmd.AddCommand(cmdFS)
+
+	rootCmd.Flags().AddFlagSet(generalFlags)
+
+	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 
 	return rootCmd
 }
