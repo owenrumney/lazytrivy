@@ -148,8 +148,9 @@ func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.
 	w.v.Clear()
 	w.body = []string{}
 
+	w.results = []*output.Result{}
+
 	if w.currentReport == nil || !w.currentReport.HasIssues() {
-		width, height := w.v.Size()
 
 		lines := []string{
 			"Great News!",
@@ -157,7 +158,7 @@ func (w *AWSResultWidget) UpdateResultsTable(reports []*output.Report, g *gocui.
 			"No misconfigurations found!",
 		}
 
-		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, g, Services)
+		announcement := NewAnnouncementWidget(Announcement, "No Results", lines, g, Services)
 		_ = announcement.Layout(g)
 		_, _ = g.SetCurrentView(Announcement)
 
@@ -216,7 +217,6 @@ func (w *AWSResultWidget) RenderReport(report *output.Report, severity string) {
 
 func (w *AWSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) {
 	if w.currentResult == nil || len(w.currentResult.Issues) == 0 {
-		width, height := w.v.Size()
 
 		lines := []string{
 			"Great News!",
@@ -224,7 +224,7 @@ func (w *AWSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) 
 			"No misconfigurations found!",
 		}
 
-		announcement := NewAnnouncementWidget(Announcement, "No Results", width, height, lines, g)
+		announcement := NewAnnouncementWidget(Announcement, "No Results", lines, g)
 		_ = announcement.Layout(g)
 		_, _ = g.SetCurrentView(Announcement)
 
@@ -252,7 +252,7 @@ func (w *AWSResultWidget) GenerateFilteredReport(severity string, g *gocui.Gui) 
 
 	width, _ := w.v.Size()
 
-	var bodyContent []string //nolint:prealloc
+	var bodyContent []string //nolint:preallocb
 
 	headers := []string{
 		fmt.Sprintf(" %s", w.currentResult.Target),

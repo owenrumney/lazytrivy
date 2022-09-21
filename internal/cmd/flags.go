@@ -26,8 +26,6 @@ func createGeneralFlags() *pflag.FlagSet {
 
 func createFilesystemFlags() *pflag.FlagSet {
 	filesystemFlags := pflag.NewFlagSet("filesystem", pflag.ExitOnError)
-
 	filesystemFlags.StringVar(&scanPath, "path", "", "Path to scan")
-
 	return filesystemFlags
 }

@@ -9,12 +9,11 @@ import (
 
 var (
 	debugEnabled bool
+	traceEnabled bool
 	debugFile    *os.File
 )
 
-func EnableDebugging() {
-	debugEnabled = true
-
+func Configure() {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		home = "/"
@@ -26,16 +25,29 @@ func EnableDebugging() {
 	debugFile, _ = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600) // nolint: nosnakecase
 }
 
+func EnableDebugging() {
+	debugEnabled = true
+}
+
 func EnableTracing() {
-	EnableDebugging()
+	traceEnabled = true
 }
 
 func Tracef(format string, args ...interface{}) {
-	logf("TRACE", format, args...)
+	if traceEnabled {
+		logf("TRACE", format, args...)
+	}
+
 }
 
 func Debugf(format string, args ...interface{}) {
-	logf("DEBUG", format, args...)
+	if debugEnabled {
+		logf("DEBUG", format, args...)
+	}
+}
+
+func Infof(format string, args ...interface{}) {
+	logf("INFO", format, args...)
 }
 
 func Errorf(format string, args ...interface{}) {
@@ -43,8 +55,6 @@ func Errorf(format string, args ...interface{}) {
 }
 
 func logf(level string, format string, args ...interface{}) {
-	if debugEnabled {
-		_, _ = fmt.Fprintf(debugFile, fmt.Sprintf("%s [%s] ", time.Now().Format(time.RFC3339), level)+fmt.Sprintf(format, args...))
-		_, _ = fmt.Fprintln(debugFile)
-	}
+	_, _ = fmt.Fprintf(debugFile, fmt.Sprintf("%s\t[%s]\t", time.Now().Format(time.RFC3339), level)+fmt.Sprintf(format, args...))
+	_, _ = fmt.Fprintln(debugFile)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/dockerClient"
+	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
@@ -50,6 +51,10 @@ func (c *Controller) RefreshView(viewName string) {
 }
 
 func (c *Controller) UpdateStatus(status string) {
+	if status != "" {
+		logger.Infof(status)
+	}
+
 	if v, ok := c.Views[widgets.Status].(*widgets.StatusWidget); ok {
 		v.UpdateStatus(status)
 		c.Cui.Update(func(_ *gocui.Gui) error {

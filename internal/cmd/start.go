@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/owenrumney/lazytrivy/pkg/config"
@@ -11,9 +10,11 @@ import (
 )
 
 func startGUI(tab widgets.Tab) error {
+	logger.Configure()
+
 	workingDir, err := os.Getwd()
 	if err != nil {
-		fail(err)
+		return err
 	}
 
 	cfg, err := config.Load()
@@ -40,15 +41,14 @@ func startGUI(tab widgets.Tab) error {
 
 	control, err := gui.New(tab, cfg)
 	if err != nil {
-		fail(err)
-
+		return err
 	}
 
 	defer control.Close()
 
 	// create the widgets
 	if err := control.CreateWidgets(); err != nil {
-		fail(err)
+		return err
 
 	}
 
@@ -57,20 +57,6 @@ func startGUI(tab widgets.Tab) error {
 		return err
 	}
 
-	if control.IsDockerDesktop() {
-		control.ShowDockerDesktopWarning()
-	}
-
 	// Enter the run loop - it's all in the gui from this point on
-	if err := control.Run(); err != nil {
-		fail(err)
-
-	}
-
-	return nil
-}
-
-func fail(err error) {
-	_, _ = fmt.Fprintf(os.Stderr, "Error: %s", err)
-	os.Exit(1)
+	return control.Run()
 }

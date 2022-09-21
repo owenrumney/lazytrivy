@@ -17,9 +17,7 @@ var helpCommands = []string{
 
 func help(gui *gocui.Gui, _ *gocui.View) error {
 
-	w, h := gui.Size()
-
-	v := widgets.NewAnnouncementWidget("help", "Help", w, h, helpCommands, gui)
+	v := widgets.NewAnnouncementWidget("help", "Help", helpCommands, gui)
 
 	gui.Update(func(g *gocui.Gui) error {
 		if err := v.Layout(g); err != nil {

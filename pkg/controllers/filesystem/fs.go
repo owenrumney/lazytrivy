@@ -121,7 +121,6 @@ func (c *Controller) RenderFilesystemFileReport() error {
 				return fmt.Errorf("failed to set current view: %w", err)
 			}
 		} else {
-			width, height := c.Cui.Size()
 
 			lines := []string{
 				"Great News!",
@@ -129,7 +128,7 @@ func (c *Controller) RenderFilesystemFileReport() error {
 				"No Issues found!",
 			}
 
-			announcement := widgets.NewAnnouncementWidget(widgets.Announcement, "No Results", width, height, lines, c.Cui)
+			announcement := widgets.NewAnnouncementWidget(widgets.Announcement, "No Results", lines, c.Cui)
 			_ = announcement.Layout(c.Cui)
 			_, _ = c.Cui.SetCurrentView(widgets.Announcement)
 

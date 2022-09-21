@@ -39,9 +39,11 @@ var defaultConfig *Config
 
 var configPath string
 
-func init() {
+func createDefaultConfig() error {
+	logger.Debugf("Creating default config")
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
+		logger.Errorf("Error getting user home directory: %s", err)
 		homeDir = os.TempDir()
 	}
 	trivyCacheDir := filepath.Join(homeDir, ".cache", "trivy")
@@ -64,17 +66,26 @@ func init() {
 	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return
+		return err
 	}
 
 	lazyTrivyConfigDir := filepath.Join(configDir, "lazytrivy")
 
-	_ = os.MkdirAll(lazyTrivyConfigDir, os.ModePerm)
+	if err := os.MkdirAll(lazyTrivyConfigDir, os.ModePerm); err != nil {
+		return err
+	}
 
 	configPath = filepath.Join(lazyTrivyConfigDir, "config.yaml")
+
+	return nil
 }
 
 func Load() (*Config, error) {
+
+	if err := createDefaultConfig(); err != nil {
+		return nil, err
+	}
+
 	logger.Debugf("Attempting to load config from %s", configPath)
 	if _, err := os.Stat(configPath); err != nil {
 		logger.Debugf("No config file found, using defaults")
@@ -91,12 +102,7 @@ func Load() (*Config, error) {
 		logger.Errorf("Error parsing config file: %s", err)
 		return defaultConfig, err
 	}
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	defaultConfig.Filesystem.WorkingDirectory = cwd
+	logger.Infof("Loaded config from %s", configPath)
 
 	return defaultConfig, nil
 }
@@ -114,6 +120,7 @@ func Save(config *Config) error {
 		return err
 	}
 
+	logger.Infof("Saved config to %s", configPath)
 	return nil
 }
 

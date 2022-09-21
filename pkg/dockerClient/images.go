@@ -54,15 +54,10 @@ func (c *Client) ListImages() []string {
 func (c *Client) ScanAllImages(ctx context.Context, progress Progress, reportComplete func(report *output.Report) error) error {
 
 	for _, imageName := range c.imageNames {
-		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
-		logger.Debugf("Scanning image %s", imageName)
-
 		report, err := c.ScanImage(ctx, imageName, progress)
 		if err != nil {
 			return err
 		}
-		progress.UpdateStatus(fmt.Sprintf("Scanning image %s...done", imageName))
-		logger.Debugf("Scanning image %s...done", imageName)
 		if err := reportComplete(report); err != nil {
 			logger.Errorf("Error reporting scan results: %s", err)
 			ctx.Done()
@@ -79,7 +74,6 @@ func (c *Client) ScanAllImages(ctx context.Context, progress Progress, reportCom
 }
 
 func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progress) (*output.Report, error) {
-	logger.Debugf("Scanning image %s", imageName)
 	progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
 	command := []string{"image", "-f=json", imageName}
 

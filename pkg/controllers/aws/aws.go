@@ -97,42 +97,6 @@ func (c *Controller) Initialise() error {
 	return outerErr
 }
 
-func (c *Controller) refreshServices() error {
-	logger.Debugf("getting caches services")
-	services, err := c.accountRegionCacheServices(c.Config.AWS.AccountNo, c.Config.AWS.Region)
-	if err != nil {
-		return err
-	}
-
-	logger.Debugf("Updating the services view with the identified services")
-	if v, ok := c.Views[widgets.Services].(*widgets.ServicesWidget); ok {
-		if err := v.RefreshServices(services, 20); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Controller) UpdateAccount(account string) error {
-	logger.Debugf("Updating the AWS account details in the config")
-	c.Config.AWS.AccountNo = account
-	c.Config.AWS.Region = "us-east-1"
-	if err := c.Config.Save(); err != nil {
-		return err
-	}
-
-	return c.update()
-}
-
-func (c *Controller) UpdateRegion(region string) error {
-	logger.Debugf("Updating the AWS region details in the config")
-	c.Config.AWS.Region = region
-	if err := c.Config.Save(); err != nil {
-		return err
-	}
-	return c.update()
-}
-
 func (c *Controller) update() error {
 	if v, ok := c.Views[widgets.Account]; ok {
 		if a, ok := v.(*widgets.AccountWidget); ok {
@@ -235,7 +199,7 @@ func (c *Controller) discoverAccount(region string) (string, string, error) {
 	}
 
 	if regionEnv, ok := os.LookupEnv("AWS_REGION"); ok {
-		logger.Debugf("Using AWS_REGION environment variable")
+		logger.Infof("Using AWS_REGION environment variable")
 		cfg.Region = regionEnv
 	}
 
@@ -259,7 +223,6 @@ func (c *Controller) scanAccount(gui *gocui.Gui, _ *gocui.View) error {
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "failed to discover AWS caller identity") {
 			c.UpdateStatus("Failed to discover AWS credentials.")
-			logger.Errorf("failed to discover AWS credentials: %v", err)
 			return NewErrNoValidCredentials()
 		}
 		return err
@@ -268,7 +231,6 @@ func (c *Controller) scanAccount(gui *gocui.Gui, _ *gocui.View) error {
 	c.UpdateStatus("Checking credentials for account...")
 	if account != c.Config.AWS.AccountNo && c.Config.AWS.AccountNo != "" {
 		c.UpdateStatus("Account number does not match credentials.")
-		logger.Errorf("Account number does not match credentials.")
 		return fmt.Errorf("account number mismatch: %s != %s", account, c.Config.AWS.AccountNo)
 	}
 

@@ -23,7 +23,10 @@ func (w *AnnouncementWidget) RefreshView() {
 	panic("unimplemented")
 }
 
-func NewAnnouncementWidget(name, title string, width, height int, lines []string, ctx *gocui.Gui, nextView ...string) *AnnouncementWidget {
+func NewAnnouncementWidget(name, title string, lines []string, ctx *gocui.Gui, nextView ...string) *AnnouncementWidget {
+
+	width, height := ctx.Size()
+
 	nextViewName := Results
 	if len(nextView) > 0 {
 		nextViewName = nextView[0]
