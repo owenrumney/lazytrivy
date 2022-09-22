@@ -25,25 +25,24 @@ func (c *Client) ListImages() []string {
 	var imageNames []string
 
 	for _, image := range images {
-		if image.RepoTags != nil {
+		if image.RepoTags != nil && len(image.RepoTags) > 0 {
 			imageName := image.RepoTags[0]
 
-			if strings.HasPrefix(imageName, "aquasec/trivy") {
+			if strings.Contains(imageName, "aquasec/trivy") {
 				logger.Debugf("Found trivy image %s", imageName)
 				c.trivyImagePresent = true
 				continue
-			} else if strings.HasPrefix(imageName, "lazytrivy") {
+			} else if strings.Contains(imageName, "lazytrivy") {
 				logger.Debugf("Found lazy trivy image %s", imageName)
 				c.lazyTrivyImagePresent = true
 				continue
-			} else if strings.HasPrefix(imageName, "<none>:") {
+			} else if strings.Contains(imageName, "<none>:") {
 				// we don't need to be showing these
 				continue
 			}
 			imageNames = append(imageNames, imageName)
 		}
 	}
-
 	sort.Strings(imageNames)
 	c.imageNames = imageNames
 
