@@ -75,13 +75,16 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	switch scanImageName {
 	case "lazytrivy:1.0.0":
 		if !c.lazyTrivyImagePresent {
+			progress.UpdateStatus("Building lazytrivy image, this only needs to happen once...")
 			report, err := c.buildScannerImage(ctx)
 			if err != nil {
 				return report, err
 			}
+			progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", scanTarget))
 		}
 	case "aquasec/trivy:latest":
 		if !c.trivyImagePresent {
+			progress.UpdateStatus("Pulling trivy image, this only needs to happen once...")
 			resp, err := c.client.ImagePull(ctx, scanImageName, types.ImagePullOptions{
 				All: false,
 			})
@@ -89,7 +92,10 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 				return nil, err
 			}
 
+			defer func() { _ = resp.Close() }()
 			_, _ = io.Copy(io.Discard, resp)
+			c.trivyImagePresent = true
+			progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", scanTarget))
 		}
 	}
 	logger.Tracef("Running trivy scan with command %s", command)

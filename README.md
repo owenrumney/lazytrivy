@@ -132,6 +132,21 @@ lazytrivy fs --path /home/owen/code/github/owenrumney/example
 
 This will start in filesystem mode pointing to the specified path. If no path is provided it will point to the current working directory.
 
+#### Running with Podman
+
+lazytrivy will work with podman in non-root mode, you do however need to be careful to either start podman in a different terminal to lazytrivy or pipe the podman output to `/dev/null`.
+
+For example, you can start podman with 
+
+```bash
+podman system service -t 3600 unix:///tmp/podman-run-1000/podman/podman.sock 2>/dev/null  &
+```
+
+then start lazytrivy with
+
+```bash
+lazytrivy --docker-host unix:///tmp/podman-run-1000/podman/podman.sock image
+```
 
 ### Scanning all local images
 
