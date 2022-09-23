@@ -13,5 +13,5 @@ func (c *Client) ScanFilesystem(ctx context.Context, path string, requiredChecks
 	progress.UpdateStatus(fmt.Sprintf("Scanning filesystem %s...", path))
 	command := []string{"fs", "--quiet", "--security-checks", checks, "-f=json", "/target"}
 
-	return c.scan(ctx, command, path, []string{}, progress, "lazytrivy:1.0.0", fmt.Sprintf("%s:/target", path))
+	return c.scan(ctx, command, path, []string{}, progress, "lazytrivy:1.0.0", EngineDocker, fmt.Sprintf("%s:/target", path))
 }

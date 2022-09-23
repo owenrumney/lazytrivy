@@ -76,5 +76,8 @@ func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progr
 	progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
 	command := []string{"image", "-f=json", imageName}
 
-	return c.scan(ctx, command, imageName, []string{}, progress, "aquasec/trivy:latest")
+	if report, err := c.scan(ctx, command, imageName, []string{}, progress, "aquasec/trivy:latest", EngineDocker); err == nil {
+		return report, nil
+	}
+	return c.scan(ctx, command, imageName, []string{}, progress, "aquasec/trivy:latest", EnginePodman)
 }

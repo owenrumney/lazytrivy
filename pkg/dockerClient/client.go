@@ -19,6 +19,13 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
+type engineType string
+
+const (
+	EngineDocker engineType = "docker"
+	EnginePodman            = "podman"
+)
+
 type Progress interface {
 	UpdateStatus(status string)
 	ClearStatus()
@@ -70,7 +77,13 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress, scanImageName string, additionalBinds ...string) (*output.Report, error) {
+func (c *Client) scan(ctx context.Context, command []string, scanTarget string, env []string, progress Progress, scanImageName string, engineType engineType, additionalBinds ...string) (*output.Report, error) {
+
+	socketMount := "/var/run/docker.sock:/var/run/docker.sock"
+	if engineType == EnginePodman {
+		socketMount = fmt.Sprintf("%s:/var/run/podman/podman.sock:ro", c.socketPath)
+		env = append(env, "XDG_RUNTIME_DIR=/var/run")
+	}
 
 	switch scanImageName {
 	case "lazytrivy:1.0.0":
@@ -109,8 +122,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	cachePath := filepath.Join(userHomeDir, ".cache")
 
 	binds := []string{
-		// fmt.Sprintf("%s:/var/run/docker.sock", c.socketPath),
-		"/var/run/docker.sock:/var/run/docker.sock",
+		socketMount,
 		fmt.Sprintf("%s:/root/.cache", cachePath),
 	}
 
@@ -172,8 +184,8 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 
 	rep, err := output.FromJSON(scanTarget, buffer.String())
 	if err != nil {
-		logger.Errorf("Error parsing trivy output, response from container: %s", errBuffer.String())
-		progress.UpdateStatus(fmt.Sprintf("Error scanning image %s", scanTarget))
+		logger.Tracef("Error parsing trivy output, response from container: %s", errBuffer.String())
+		progress.UpdateStatus(fmt.Sprintf("Error scanning image %s with %s", scanTarget, engineType))
 		return nil, err
 	}
 
