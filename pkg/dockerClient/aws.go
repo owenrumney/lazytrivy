@@ -57,5 +57,5 @@ func (c *Client) ScanService(ctx context.Context, serviceName string, accountNo,
 		fmt.Sprintf("%s:/root/.aws", awsPath),
 	}
 
-	return c.scan(ctx, command, target, env, progress, "lazytrivy:1.0.0", additionalBinds...)
+	return c.scan(ctx, command, target, env, progress, "lazytrivy:1.0.0", EngineDocker, additionalBinds...)
 }
