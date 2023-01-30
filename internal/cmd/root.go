@@ -13,14 +13,6 @@ var cmdImage = &cobra.Command{
 	},
 }
 
-var cmdAWS = &cobra.Command{
-	Use:   "aws",
-	Short: "Launch lazytrivy in aws scanning mode",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return startGUI(widgets.AWSTab)
-	},
-}
-
 var cmdFS = &cobra.Command{
 	Use:     "filesystem",
 	Aliases: []string{"fs"},
@@ -36,8 +28,6 @@ func GetRootCmd() *cobra.Command {
 
 	cmdImage.Flags().AddFlagSet(generalFlags)
 
-	cmdAWS.Flags().AddFlagSet(generalFlags)
-
 	cmdFS.Flags().AddFlagSet(generalFlags)
 	cmdFS.Flags().AddFlagSet(filesystemFlags)
 
@@ -46,7 +36,6 @@ func GetRootCmd() *cobra.Command {
 	}
 
 	rootCmd.AddCommand(cmdImage)
-	rootCmd.AddCommand(cmdAWS)
 	rootCmd.AddCommand(cmdFS)
 
 	rootCmd.Flags().AddFlagSet(generalFlags)

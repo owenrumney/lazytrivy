@@ -1,11 +1,10 @@
 package filesystem
 
-import "github.com/awesome-gocui/gocui"
-
 import (
 	"errors"
 	"fmt"
 
+	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 

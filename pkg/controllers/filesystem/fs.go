@@ -138,7 +138,7 @@ func (c *Controller) RenderFilesystemFileReport() error {
 }
 
 func (c *Controller) RenderFilesystemFileReportd(report *output.Report) error {
-	if v, ok := c.Views[widgets.Results].(*widgets.AWSResultWidget); ok {
+	if v, ok := c.Views[widgets.Results].(*widgets.FSResultWidget); ok {
 		v.UpdateResultsTable([]*output.Report{report}, c.Cui)
 
 	}

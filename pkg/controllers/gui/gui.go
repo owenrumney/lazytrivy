@@ -10,7 +10,6 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 
 	"github.com/owenrumney/lazytrivy/pkg/config"
-	"github.com/owenrumney/lazytrivy/pkg/controllers/aws"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/vulnerabilities"
 	"github.com/owenrumney/lazytrivy/pkg/dockerClient"
@@ -46,8 +45,6 @@ func New(tab widgets.Tab, cfg *config.Config) (*Controller, error) {
 	}
 
 	switch tab {
-	case widgets.AWSTab:
-		mainController.activeController = aws.NewAWSController(cui, dkrClient, cfg)
 	case widgets.FileSystemTab:
 		mainController.activeController = filesystem.NewFilesystemController(cui, dkrClient, cfg)
 	default:
@@ -129,9 +126,7 @@ func (c *Controller) AddViews(w ...gocui.Manager) {
 func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 
 	choices := []string{
-
-		"**0*** AWS",
-		"**1*** File System",
+		"**2*** File System",
 		"**2*** Image",
 	}
 
@@ -139,8 +134,6 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 
 	choiceWidget := widgets.NewChoiceWidget("mode", w, y, "Scanning Mode", choices, func(selectedMode string) error {
 		switch selectedMode {
-		case "AWS":
-			c.activeController = aws.NewAWSController(c.cui, c.dockerClient, c.config)
 		case "File System":
 			c.activeController = filesystem.NewFilesystemController(c.cui, c.dockerClient, c.config)
 		default:
