@@ -18,13 +18,6 @@ type vulnerabilityContext interface {
 	ScanImage(ctx context.Context)
 }
 
-type awsContext interface {
-	baseContext
-	ScanService(ctx context.Context)
-	UpdateAccount(account string) error
-	UpdateRegion(region string) error
-}
-
 type fsContext interface {
 	baseContext
 	ShowTarget(ctx context.Context)

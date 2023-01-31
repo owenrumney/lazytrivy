@@ -9,19 +9,12 @@ import (
 )
 
 type Config struct {
-	AWS            AWSConfig
 	Vulnerability  VulnerabilityConfig
 	Filesystem     FileSystemConfig
 	CacheDirectory string `json:"-"`
 	Debug          bool
 	Trace          bool
 	DockerEndpoint string
-}
-
-type AWSConfig struct {
-	AccountNo      string
-	Region         string
-	CacheDirectory string
 }
 
 type VulnerabilityConfig struct {
@@ -47,14 +40,10 @@ func createDefaultConfig() error {
 		homeDir = os.TempDir()
 	}
 	trivyCacheDir := filepath.Join(homeDir, ".cache", "trivy")
-	awsCacheDir := filepath.Join(trivyCacheDir, "cloud", "aws")
 
 	defaultConfig = &Config{
 		CacheDirectory: trivyCacheDir,
 		Debug:          false,
-		AWS: AWSConfig{
-			CacheDirectory: awsCacheDir,
-		},
 		Vulnerability: VulnerabilityConfig{
 			IgnoreUnfixed: false,
 		},
