@@ -19,8 +19,6 @@ lazydocker, lazynpm, lazygit)
   - [Scan all images on your system](#scanning-all-local-images)
   - [Scan a single image](#scanning-a-specific-image)
   - [Scan a remote image](#scanning-a-remote-image)
-- AWS Scanning
-  - [Scan your cloud account](#scanning-an-aws-account)
 - File System Scanning
   - [Scan a filesystem for vulnerabilities and misconfigurations](#scanning-a-filesystem)
 
@@ -58,9 +56,6 @@ Alternatively, you can get the latest releases from [GitHub](https://github.com/
 A config file can be added to `~/.config/lazytrivy/config.yml` to set default options.
 
 ```yaml
-aws:
-  accountno: "464897523927"
-  region: us-east-1
 vulnerability:
   ignoreunfixed: false
 filesystem:
@@ -91,7 +86,6 @@ Usage:
   lazytrivy [command]
 
 Available Commands:
-  aws         Launch lazytrivy in aws scanning mode
   filesystem  Launch lazytrivy in filesystem scanning mode
   help        Help about any command
   image       Launch lazytrivy in image scanning mode
@@ -122,7 +116,7 @@ The default docker host is `unix:///var/run/docker.sock`. If you are running Doc
 
 ### Starting in a specific mode
 
-You can start `lazytrivy` in a specific mode using `aws`, `images` or `filesystem`:
+You can start `lazytrivy` in a specific mode using `images` or `filesystem`:
 
 For example, to scan a specific filesystem folder, you could run:
 
@@ -172,13 +166,6 @@ To scan an image that is not already locally on the machine, you can use the `r`
 
 ![Scanning a remote image](./.github/images/scan_remote_image.gif)
 
-### Scanning an AWS Account
-
-To scan an AWS account, you can use the `w` key to switch to AWS mode, from there you can use the `s` key to scan, it will detect any valid credentials it can.
-
-![Scanning an AWS account](./.github/images/scan_aws_account.gif)
-
-By pressing `r` you can switch region in results you already have.
 
 ### Scanning a filesystem
 

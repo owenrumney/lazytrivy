@@ -29,6 +29,5 @@ type Tab string
 
 const (
 	VulnerabilitiesTab Tab = "Vulnerabilities"
-	AWSTab             Tab = "AWS"
 	FileSystemTab      Tab = "FileSystem"
 )
