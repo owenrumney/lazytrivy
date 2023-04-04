@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/awesome-gocui/gocui v1.1.0
 	github.com/docker/cli v20.10.18+incompatible
-	github.com/docker/docker v20.10.18+incompatible
+	github.com/docker/docker v20.10.24+incompatible
 	github.com/liamg/tml v0.6.0
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/owenrumney/gocui-form v0.0.1
