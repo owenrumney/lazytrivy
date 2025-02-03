@@ -6,14 +6,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
 
 func (c *Client) ListImages() []string {
-	images, err := c.client.ImageList(context.Background(), types.ImageListOptions{
+	images, err := c.client.ImageList(context.Background(), image.ListOptions{
 		All:     false,
 		Filters: filters.Args{},
 	})

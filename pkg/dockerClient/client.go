@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -61,7 +62,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 
 	}
 
-	if _, err := cli.ContainerList(context.Background(), types.ContainerListOptions{}); err != nil {
+	if _, err := cli.ContainerList(context.Background(), container.ListOptions{}); err != nil {
 		if strings.Contains(err.Error(), "Is the docker daemon running?") {
 			fmt.Println("Error connecting to docker daemon. Is it running?")
 			os.Exit(1)
@@ -98,7 +99,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	case "aquasec/trivy:latest":
 		if !c.trivyImagePresent {
 			progress.UpdateStatus("Pulling trivy image, this only needs to happen once...")
-			resp, err := c.client.ImagePull(ctx, scanImageName, types.ImagePullOptions{
+			resp, err := c.client.ImagePull(ctx, scanImageName, image.PullOptions{
 				All: false,
 			})
 			if err != nil {
@@ -150,10 +151,10 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	// make sure we kill the container
 	defer func() {
 		logger.Tracef("Removing container %s", cont.ID)
-		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
+		_ = c.client.ContainerRemove(ctx, cont.ID, container.RemoveOptions{})
 	}()
 
-	if err := c.client.ContainerStart(ctx, cont.ID, types.ContainerStartOptions{}); err != nil {
+	if err := c.client.ContainerStart(ctx, cont.ID, container.StartOptions{}); err != nil {
 		return nil, err
 	}
 
@@ -168,7 +169,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 	case <-statusCh:
 	}
 
-	out, err := c.client.ContainerLogs(ctx, cont.ID, types.ContainerLogsOptions{
+	out, err := c.client.ContainerLogs(ctx, cont.ID, container.LogsOptions{
 		ShowStdout: true, ShowStderr: true, Follow: false,
 	})
 	if err != nil {
@@ -191,7 +192,7 @@ func (c *Client) scan(ctx context.Context, command []string, scanTarget string, 
 
 	select {
 	case <-ctx.Done():
-		_ = c.client.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{})
+		_ = c.client.ContainerRemove(ctx, cont.ID, container.RemoveOptions{})
 		return nil, ctx.Err() // nolint
 	default:
 
