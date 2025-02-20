@@ -26,7 +26,7 @@ func (c *Controller) ScanImage(ctx context.Context) {
 	defer c.Unlock()
 	cancellable, c.ActiveCancel = context.WithCancel(ctx)
 	go func() {
-		report, err := c.DockerClient.ScanImage(cancellable, c.selectedImage, c)
+		report, err := c.DockerClient.ScanImage(cancellable, c.selectedImage, c.Config.Insecure, c)
 		if err != nil {
 			return
 		}
@@ -90,7 +90,7 @@ func (c *Controller) ScanAllImages(gui *gocui.Gui, _ *gocui.View) error {
 	go func() {
 		var reports []*output.Report
 
-		err := c.DockerClient.ScanAllImages(cancellable, c, func(report *output.Report) error {
+		err := c.DockerClient.ScanAllImages(cancellable, c.Config.Insecure, c, func(report *output.Report) error {
 			reports = append(reports, report)
 			if err := c.RenderResultsReportSummary(reports); err != nil {
 				c.UpdateStatus(err.Error())

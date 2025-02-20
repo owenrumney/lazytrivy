@@ -65,7 +65,7 @@ func (c *Controller) scanVulnerabilities() error {
 		defer c.Unlock()
 		cancellable, c.ActiveCancel = context.WithCancel(context.Background())
 
-		report, err := c.DockerClient.ScanFilesystem(cancellable, c.workingDirectory, scanChecks, c)
+		report, err := c.DockerClient.ScanFilesystem(cancellable, c.workingDirectory, scanChecks, c.Config.Insecure, c)
 		if err != nil {
 			logger.Errorf("error scanning filesystem: %v", err)
 		}

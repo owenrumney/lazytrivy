@@ -33,6 +33,7 @@ func NewSettingsWidget(name string, x, y, w, h int, gui *gocui.Gui, cfg *config.
 func (w *SettingsWidget) Draw() {
 	w.form.AddHeading("General Options")
 	w.form.AddCheckBox("  Enable Debugging", 25, w.cfg.Debug)
+	w.form.AddCheckBox("  Disable CA Verification", 25, w.cfg.Insecure)
 	w.form.AddInputField("  Trivy Cache", 25, 30, w.cfg.CacheDirectory)
 	w.form.AddHeading("Scanning Options")
 	w.form.AddCheckBox("  Scan Vulnerabilities", 25, w.cfg.Filesystem.ScanVulnerabilities)
@@ -43,6 +44,7 @@ func (w *SettingsWidget) Draw() {
 	w.form.AddButton("Save", func(gui *gocui.Gui, view *gocui.View) error {
 
 		w.cfg.Debug = w.form.GetCheckBoxState("  Enable Debugging")
+		w.cfg.Insecure = w.form.GetCheckBoxState("  Disable CA Verification")
 		w.cfg.CacheDirectory = w.form.GetFieldText("  Trivy Cache")
 		w.cfg.Filesystem.ScanVulnerabilities = w.form.GetCheckBoxState("  Scan Vulnerabilities")
 		w.cfg.Filesystem.ScanMisconfiguration = w.form.GetCheckBoxState("  Scan Misconfigs")

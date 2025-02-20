@@ -50,10 +50,10 @@ func (c *Client) ListImages() []string {
 	return c.imageNames
 }
 
-func (c *Client) ScanAllImages(ctx context.Context, progress Progress, reportComplete func(report *output.Report) error) error {
+func (c *Client) ScanAllImages(ctx context.Context, insecure bool, progress Progress, reportComplete func(report *output.Report) error) error {
 
 	for _, imageName := range c.imageNames {
-		report, err := c.ScanImage(ctx, imageName, progress)
+		report, err := c.ScanImage(ctx, imageName, insecure, progress)
 		if err != nil {
 			return err
 		}
@@ -72,9 +72,13 @@ func (c *Client) ScanAllImages(ctx context.Context, progress Progress, reportCom
 	return nil
 }
 
-func (c *Client) ScanImage(ctx context.Context, imageName string, progress Progress) (*output.Report, error) {
+func (c *Client) ScanImage(ctx context.Context, imageName string, insecure bool, progress Progress) (*output.Report, error) {
 	progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
-	command := []string{"image", "-f=json", imageName}
+	command := []string{"image", "-f=json"}
+	if insecure {
+		command = append(command, "--insecure")
+	}
+	command = append(command, imageName)
 
 	if report, err := c.scan(ctx, command, imageName, []string{}, progress, "aquasec/trivy:latest", EngineDocker); err == nil {
 		return report, nil
