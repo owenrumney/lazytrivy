@@ -5,8 +5,8 @@ import (
 )
 
 type state struct {
-	workingDireectory string
-	currentTarget     string
-	currentReport     *output.Report
-	currentResult     *output.Result
+	workingDirectory string
+	currentTarget    string
+	currentReport    *output.Report
+	currentResult    *output.Result
 }

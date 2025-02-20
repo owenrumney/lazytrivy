@@ -65,7 +65,7 @@ func (c *Controller) scanVulnerabilities() error {
 		defer c.Unlock()
 		cancellable, c.ActiveCancel = context.WithCancel(context.Background())
 
-		report, err := c.DockerClient.ScanFilesystem(cancellable, c.workingDireectory, scanChecks, c)
+		report, err := c.DockerClient.ScanFilesystem(cancellable, c.workingDirectory, scanChecks, c)
 		if err != nil {
 			logger.Errorf("error scanning filesystem: %v", err)
 		}
@@ -129,7 +129,7 @@ func (c *Controller) showPathChange(gui *gocui.Gui, _ *gocui.View) error {
 	maxX, maxY := gui.Size()
 
 	gui.Cursor = true
-	pathChange, err := widgets.NewPathChangeWidget(widgets.PathChange, maxX, maxY, 150, c.workingDireectory, c)
+	pathChange, err := widgets.NewPathChangeWidget(widgets.PathChange, maxX, maxY, 150, c.workingDirectory, c)
 	if err != nil {
 		return fmt.Errorf("failed to create pathchange input: %w", err)
 	}
