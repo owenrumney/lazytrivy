@@ -18,7 +18,7 @@ type Controller struct {
 }
 
 func (c *Controller) SetWorkingDirectory(dir string) {
-	c.workingDireectory = dir
+	c.workingDirectory = dir
 	c.Config.Filesystem.WorkingDirectory = dir
 
 	if v, ok := c.Views[widgets.ScanPath]; ok {
@@ -40,7 +40,7 @@ func NewFilesystemController(cui *gocui.Gui, dockerClient *dockerClient.Client, 
 			Config:       cfg,
 		},
 		&state{
-			workingDireectory: cfg.Filesystem.WorkingDirectory,
+			workingDirectory: cfg.Filesystem.WorkingDirectory,
 		},
 	}
 }
@@ -53,7 +53,7 @@ func (c *Controller) CreateWidgets(manager base.Manager) error {
 	c.Views[widgets.Results] = widgets.NewFSResultWidget(widgets.Results, c)
 	c.Views[widgets.Menu] = widgets.NewMenuWidget(widgets.Menu, 0, maxY-3, maxX-1, maxY-1)
 	c.Views[widgets.Status] = widgets.NewStatusWidget(widgets.Status)
-	c.Views[widgets.ScanPath] = widgets.NewScanPathWidget(widgets.Host, c.workingDireectory, c)
+	c.Views[widgets.ScanPath] = widgets.NewScanPathWidget(widgets.Host, c.workingDirectory, c)
 
 	for _, v := range c.Views {
 		_ = v.Layout(c.Cui)

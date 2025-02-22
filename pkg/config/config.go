@@ -14,6 +14,7 @@ type Config struct {
 	CacheDirectory string `json:"-"`
 	Debug          bool
 	Trace          bool
+	Insecure       bool
 	DockerEndpoint string
 }
 
@@ -44,6 +45,7 @@ func createDefaultConfig() error {
 	defaultConfig = &Config{
 		CacheDirectory: trivyCacheDir,
 		Debug:          false,
+		Insecure:       false,
 		Vulnerability: VulnerabilityConfig{
 			IgnoreUnfixed: false,
 		},
