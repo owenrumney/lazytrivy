@@ -3,12 +3,17 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"gopkg.in/yaml.v3"
 )
 
-type Config struct {
+var defaultConfig *Config
+
+var configPath string
+
+type LegacyConfig struct {
 	Vulnerability  VulnerabilityConfig
 	Filesystem     FileSystemConfig
 	CacheDirectory string `json:"-"`
@@ -17,7 +22,6 @@ type Config struct {
 	Insecure       bool
 	DockerEndpoint string
 }
-
 type VulnerabilityConfig struct {
 	IgnoreUnfixed bool
 }
@@ -29,9 +33,22 @@ type FileSystemConfig struct {
 	WorkingDirectory     string `json:"-"`
 }
 
-var defaultConfig *Config
+type Scanner struct {
+	ScanSecrets          bool `yaml:"scan_secrets" json:"scan_secrets"`
+	ScanMisconfiguration bool `yaml:"scan_misconfiguration" json:"scan_misconfiguration"`
+	ScanVulnerabilities  bool `yaml:"scan_vulnerabilities" json:"scan_vulnerabilities"`
+	IgnoreUnfixed        bool
+}
 
-var configPath string
+type Config struct {
+	Scanner          Scanner `yaml:"scanner" json:"scanner"`
+	CacheDirectory   string  `yaml:"cache_directory" json:"cache_directory"`
+	Debug            bool    `yaml:"debug" json:"debug"`
+	Trace            bool    `yaml:"trace" json:"trace"`
+	Insecure         bool    `yaml:"insecure" json:"insecure"`
+	DockerEndpoint   string  `yaml:"docker_endpoint" json:"docker_endpoint"`
+	WorkingDirectory string  `yanl:"working_directory" json:"working_directory"`
+}
 
 func createDefaultConfig() error {
 	logger.Debugf("Creating default config")
@@ -46,13 +63,11 @@ func createDefaultConfig() error {
 		CacheDirectory: trivyCacheDir,
 		Debug:          false,
 		Insecure:       false,
-		Vulnerability: VulnerabilityConfig{
-			IgnoreUnfixed: false,
-		},
-		Filesystem: FileSystemConfig{
+		Scanner: Scanner{
 			ScanSecrets:          false,
 			ScanMisconfiguration: true,
 			ScanVulnerabilities:  true,
+			IgnoreUnfixed:        false,
 		},
 	}
 	configDir, err := os.UserConfigDir()
@@ -71,8 +86,45 @@ func createDefaultConfig() error {
 	return nil
 }
 
-func Load() (*Config, error) {
+func migrateConfig(configPath string) error {
+	var legacy LegacyConfig
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
 
+	if strings.Contains(string(content), "vulnerability") {
+		if err := yaml.Unmarshal(content, &legacy); err != nil {
+			return err
+		}
+
+		newConfig := &Config{
+			CacheDirectory: legacy.CacheDirectory,
+			Debug:          legacy.Debug,
+			Trace:          legacy.Trace,
+			Insecure:       legacy.Insecure,
+			Scanner: Scanner{
+				ScanSecrets:          legacy.Filesystem.ScanSecrets,
+				ScanMisconfiguration: legacy.Filesystem.ScanMisconfiguration,
+				ScanVulnerabilities:  legacy.Filesystem.ScanVulnerabilities,
+				IgnoreUnfixed:        legacy.Vulnerability.IgnoreUnfixed,
+			},
+			DockerEndpoint: legacy.DockerEndpoint,
+		}
+
+		backupConfigPath := configPath + ".bak"
+		if err := os.Rename(configPath, backupConfigPath); err != nil {
+			return err
+		}
+
+		if err := newConfig.Save(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func Load() (*Config, error) {
 	if err := createDefaultConfig(); err != nil {
 		return nil, err
 	}
@@ -81,6 +133,10 @@ func Load() (*Config, error) {
 	if _, err := os.Stat(configPath); err != nil {
 		logger.Debugf("No config file found, using defaults")
 		return defaultConfig, nil
+	}
+
+	if err := migrateConfig(configPath); err != nil {
+		return nil, err
 	}
 
 	content, err := os.ReadFile(configPath)

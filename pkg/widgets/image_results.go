@@ -49,7 +49,7 @@ func (w *ImageResultWidget) ConfigureKeys(_ *gocui.Gui) error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		if w.reports != nil && len(w.reports) > 0 {
+		if len(w.reports) > 0 {
 			w.UpdateResultsTable(w.reports, g)
 		}
 		return nil
@@ -184,7 +184,7 @@ func (w *ImageResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui
 	w.vulnerabilities = []output.Issue{}
 
 	var severities []string
-	if w.reports != nil && len(w.reports) > 0 {
+	if len(w.reports) > 0 {
 		severities = append(severities, "[B]ack")
 	}
 	severities = append(severities, "[E]verything")

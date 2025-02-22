@@ -133,7 +133,7 @@ func (i *SummaryWidget) layoutMisconfiguration(g *gocui.Gui) error {
 		}
 	}
 
-	if cause.Code.Lines != nil && len(cause.Code.Lines) > 0 {
+	if len(cause.Code.Lines) > 0 {
 		lines = append(lines, tml.Sprintf("<green> Code:</green>"))
 		for _, line := range cause.Code.Lines {
 			if line.Truncated {

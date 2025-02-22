@@ -8,6 +8,7 @@ import (
 
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
@@ -50,10 +51,10 @@ func (c *Client) ListImages() []string {
 	return c.imageNames
 }
 
-func (c *Client) ScanAllImages(ctx context.Context, insecure bool, progress Progress, reportComplete func(report *output.Report) error) error {
+func (c *Client) ScanAllImages(ctx context.Context, cfg *config.Config, progress Progress, reportComplete func(report *output.Report) error) error {
 
 	for _, imageName := range c.imageNames {
-		report, err := c.ScanImage(ctx, imageName, insecure, progress)
+		report, err := c.ScanImage(ctx, imageName, cfg, progress)
 		if err != nil {
 			return err
 		}
@@ -72,12 +73,28 @@ func (c *Client) ScanAllImages(ctx context.Context, insecure bool, progress Prog
 	return nil
 }
 
-func (c *Client) ScanImage(ctx context.Context, imageName string, insecure bool, progress Progress) (*output.Report, error) {
+func (c *Client) ScanImage(ctx context.Context, imageName string, cfg *config.Config, progress Progress) (*output.Report, error) {
 	progress.UpdateStatus(fmt.Sprintf("Scanning image %s...", imageName))
 	command := []string{"image", "-f=json"}
-	if insecure {
+	if cfg.Insecure {
 		command = append(command, "--insecure")
 	}
+
+	var scanChecks []string
+	if cfg.Scanner.ScanVulnerabilities {
+		scanChecks = append(scanChecks, "vuln")
+	}
+	if cfg.Scanner.ScanMisconfiguration {
+		scanChecks = append(scanChecks, "misconfig")
+	}
+	if cfg.Scanner.ScanSecrets {
+		scanChecks = append(scanChecks, "secret")
+	}
+
+	if len(scanChecks) > 0 {
+		command = append(command, "--scanners", strings.Join(scanChecks, ","))
+	}
+
 	command = append(command, imageName)
 
 	if report, err := c.scan(ctx, command, imageName, []string{}, progress, "aquasec/trivy:latest", EngineDocker); err == nil {

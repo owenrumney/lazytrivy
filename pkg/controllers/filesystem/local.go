@@ -49,13 +49,13 @@ func (c *Controller) scanVulnerabilities() error {
 	logger.Debugf("scanning for vulnerabilities")
 	var scanChecks []string
 
-	if c.Config.Filesystem.ScanVulnerabilities {
+	if c.Config.Scanner.ScanVulnerabilities {
 		scanChecks = append(scanChecks, "vuln")
 	}
-	if c.Config.Filesystem.ScanMisconfiguration {
-		scanChecks = append(scanChecks, "config")
+	if c.Config.Scanner.ScanMisconfiguration {
+		scanChecks = append(scanChecks, "misconfig")
 	}
-	if c.Config.Filesystem.ScanSecrets {
+	if c.Config.Scanner.ScanSecrets {
 		scanChecks = append(scanChecks, "secret")
 	}
 

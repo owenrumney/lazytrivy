@@ -206,6 +206,9 @@ func (c *Client) buildScannerImage(ctx context.Context) (*output.Report, error) 
 
 	dockerfile := createDockerFile()
 	tempDir, err := os.MkdirTemp("", "lazytrivy")
+	if err != nil {
+		return nil, err
+	}
 	dockerFilePath := filepath.Join(tempDir, "Dockerfile")
 
 	defer func() { _ = os.RemoveAll(tempDir) }()

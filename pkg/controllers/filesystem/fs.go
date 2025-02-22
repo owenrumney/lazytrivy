@@ -19,7 +19,7 @@ type Controller struct {
 
 func (c *Controller) SetWorkingDirectory(dir string) {
 	c.workingDirectory = dir
-	c.Config.Filesystem.WorkingDirectory = dir
+	c.Config.WorkingDirectory = dir
 
 	if v, ok := c.Views[widgets.ScanPath]; ok {
 		if sp, ok := v.(*widgets.ScanPathWidget); ok {
@@ -40,7 +40,7 @@ func NewFilesystemController(cui *gocui.Gui, dockerClient *dockerClient.Client, 
 			Config:       cfg,
 		},
 		&state{
-			workingDirectory: cfg.Filesystem.WorkingDirectory,
+			workingDirectory: cfg.WorkingDirectory,
 		},
 	}
 }

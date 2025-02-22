@@ -1,4 +1,4 @@
-package vulnerabilities
+package image
 
 import (
 	"fmt"

@@ -56,5 +56,5 @@ func (w *ScanPathWidget) UpdateWorkingDir(workingDir string) {
 
 func (w *ScanPathWidget) RefreshView() {
 	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	_, _ = fmt.Fprintf(w.v, "%s", w.body)
 }

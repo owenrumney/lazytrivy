@@ -48,7 +48,7 @@ func (w *FSResultWidget) ConfigureKeys(gui *gocui.Gui) error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		if w.results != nil && len(w.results) > 0 {
+		if len(w.results) > 0 {
 			w.UpdateResultsTable([]*output.Report{w.currentReport}, g)
 		}
 		return nil
@@ -220,7 +220,7 @@ func (w *FSResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui) {
 	w.issues = []output.Issue{}
 
 	var severities []string
-	if w.results != nil && len(w.results) > 0 {
+	if len(w.results) > 0 {
 		severities = append(severities, "[B]ack")
 	}
 	severities = append(severities, "[E]verything")

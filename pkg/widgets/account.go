@@ -53,7 +53,7 @@ func (w *AccountWidget) Layout(g *gocui.Gui) error {
 
 func (w *AccountWidget) RefreshView() {
 	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	_, _ = fmt.Fprintf(w.v, "%s", w.body)
 }
 
 func (w *AccountWidget) UpdateAccount(accountNumber, region string) {

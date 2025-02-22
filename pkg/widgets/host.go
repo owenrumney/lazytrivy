@@ -55,5 +55,5 @@ func (w *HostWidget) Layout(g *gocui.Gui) error {
 
 func (w *HostWidget) RefreshView() {
 	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	_, _ = fmt.Fprintf(w.v, "%s", w.body)
 }

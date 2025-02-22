@@ -11,7 +11,7 @@ import (
 
 	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
-	"github.com/owenrumney/lazytrivy/pkg/controllers/vulnerabilities"
+	"github.com/owenrumney/lazytrivy/pkg/controllers/image"
 	"github.com/owenrumney/lazytrivy/pkg/dockerClient"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
@@ -48,7 +48,7 @@ func New(tab widgets.Tab, cfg *config.Config) (*Controller, error) {
 	case widgets.FileSystemTab:
 		mainController.activeController = filesystem.NewFilesystemController(cui, dkrClient, cfg)
 	default:
-		mainController.activeController = vulnerabilities.NewVulnerabilityController(cui, dkrClient, cfg)
+		mainController.activeController = image.NewVulnerabilityController(cui, dkrClient, cfg)
 
 	}
 
@@ -64,10 +64,10 @@ func (c *Controller) CreateWidgets() error {
 }
 
 func (c *Controller) Initialise() error {
-	if c.config.Debug == true {
+	if c.config.Debug {
 		logger.Configure()
 	}
-	if c.config.Trace == true {
+	if c.config.Trace {
 		logger.EnableTracing()
 	}
 
@@ -137,7 +137,7 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 		case "File System":
 			c.activeController = filesystem.NewFilesystemController(c.cui, c.dockerClient, c.config)
 		default:
-			c.activeController = vulnerabilities.NewVulnerabilityController(c.cui, c.dockerClient, c.config)
+			c.activeController = image.NewVulnerabilityController(c.cui, c.dockerClient, c.config)
 		}
 
 		if err := c.CreateWidgets(); err != nil {

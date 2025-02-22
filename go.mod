@@ -1,8 +1,6 @@
 module github.com/owenrumney/lazytrivy
 
-go 1.23.0
-
-toolchain go1.24.1
+go 1.24.0
 
 require (
 	github.com/awesome-gocui/gocui v1.1.0

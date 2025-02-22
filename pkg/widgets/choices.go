@@ -95,7 +95,7 @@ func (w *ChoiceWidget) Layout(g *gocui.Gui) error {
 		v.Clear()
 		for _, line := range w.body {
 			line = stripIdentifierPrefix(line)
-			_, _ = fmt.Fprintln(v, fmt.Sprintf(" %s ", line))
+			_, _ = fmt.Fprintf(v, " %s ", line)
 		}
 
 		w.SetStartPosition(0)

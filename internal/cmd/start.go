@@ -34,9 +34,9 @@ func startGUI(tab widgets.Tab) error {
 	}
 
 	if scanPath != "" {
-		cfg.Filesystem.WorkingDirectory = scanPath
+		cfg.WorkingDirectory = scanPath
 	} else {
-		cfg.Filesystem.WorkingDirectory = workingDir
+		cfg.WorkingDirectory = workingDir
 	}
 
 	control, err := gui.New(tab, cfg)

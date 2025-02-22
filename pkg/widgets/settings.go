@@ -36,19 +36,19 @@ func (w *SettingsWidget) Draw() {
 	w.form.AddCheckBox("  Disable CA Verification", 25, w.cfg.Insecure)
 	w.form.AddInputField("  Trivy Cache", 25, 30, w.cfg.CacheDirectory)
 	w.form.AddHeading("Scanning Options")
-	w.form.AddCheckBox("  Scan Vulnerabilities", 25, w.cfg.Filesystem.ScanVulnerabilities)
-	w.form.AddCheckBox("  Scan Misconfigs", 25, w.cfg.Filesystem.ScanMisconfiguration)
-	w.form.AddCheckBox("  Show Secrets", 25, w.cfg.Filesystem.ScanSecrets)
-	w.form.AddCheckBox("  Ignore Unfixed", 25, w.cfg.Vulnerability.IgnoreUnfixed)
+	w.form.AddCheckBox("  Scan Vulnerabilities", 25, w.cfg.Scanner.ScanVulnerabilities)
+	w.form.AddCheckBox("  Scan Misconfigs", 25, w.cfg.Scanner.ScanMisconfiguration)
+	w.form.AddCheckBox("  Show Secrets", 25, w.cfg.Scanner.ScanSecrets)
+	w.form.AddCheckBox("  Ignore Unfixed", 25, w.cfg.Scanner.IgnoreUnfixed)
 
 	w.form.AddButton("Save", func(gui *gocui.Gui, view *gocui.View) error {
 
 		w.cfg.Debug = w.form.GetCheckBoxState("  Enable Debugging")
 		w.cfg.Insecure = w.form.GetCheckBoxState("  Disable CA Verification")
 		w.cfg.CacheDirectory = w.form.GetFieldText("  Trivy Cache")
-		w.cfg.Filesystem.ScanVulnerabilities = w.form.GetCheckBoxState("  Scan Vulnerabilities")
-		w.cfg.Filesystem.ScanMisconfiguration = w.form.GetCheckBoxState("  Scan Misconfigs")
-		w.cfg.Filesystem.ScanSecrets = w.form.GetCheckBoxState("  Show Secrets")
+		w.cfg.Scanner.ScanVulnerabilities = w.form.GetCheckBoxState("  Scan Vulnerabilities")
+		w.cfg.Scanner.ScanMisconfiguration = w.form.GetCheckBoxState("  Scan Misconfigs")
+		w.cfg.Scanner.ScanSecrets = w.form.GetCheckBoxState("  Show Secrets")
 
 		if err := w.cfg.Save(); err != nil {
 			return err
