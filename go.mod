@@ -1,12 +1,13 @@
 module github.com/owenrumney/lazytrivy
 
-go 1.22.0
+go 1.23.0
+
 toolchain go1.24.1
 
 require (
 	github.com/awesome-gocui/gocui v1.1.0
 	github.com/docker/cli v27.5.1+incompatible
-	github.com/docker/docker v27.5.1+incompatible
+	github.com/docker/docker v28.0.0+incompatible
 	github.com/liamg/tml v0.7.0
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/owenrumney/gocui-form v0.0.1
