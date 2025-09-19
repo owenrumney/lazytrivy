@@ -47,7 +47,7 @@ func (w *FilesWidget) ConfigureKeys(*gocui.Gui) error {
 
 	if err := w.ctx.SetKeyBinding(w.name, 's', gocui.ModNone, func(gui *gocui.Gui, view *gocui.View) error {
 		w.body = []string{" Scanning... "}
-		return w.ctx.ScanVulnerabilities(gui, view)
+		return w.ctx.Scan(gui, view)
 
 	}); err != nil {
 
@@ -80,13 +80,14 @@ func (w *FilesWidget) Layout(g *gocui.Gui) error {
 	}
 	v.Title = " Files "
 
-	v.SelBgColor = gocui.ColorGreen | gocui.AttrDim
-	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
+	v.SelBgColor = gocui.ColorDefault | gocui.AttrDim
+	v.SelFgColor = gocui.ColorBlue | gocui.AttrBold
 	if g.CurrentView() == v {
-		v.FrameColor = gocui.ColorGreen
+		v.FrameColor = gocui.ColorBlue
 	} else {
 		v.FrameColor = gocui.ColorDefault
 	}
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 
 	w.v = v
 	return nil

@@ -26,5 +26,9 @@ func (c *Controller) ConfigureGlobalKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for settings: %w", err)
 	}
 
+	if err := c.Cui.SetKeybinding("", 'l', gocui.ModNone, c.showLogOverlay); err != nil {
+		return fmt.Errorf("error setting keybinding for log overlay: %w", err)
+	}
+
 	return nil
 }

@@ -47,7 +47,7 @@ type Config struct {
 	Trace            bool    `yaml:"trace" json:"trace"`
 	Insecure         bool    `yaml:"insecure" json:"insecure"`
 	DockerEndpoint   string  `yaml:"docker_endpoint" json:"docker_endpoint"`
-	WorkingDirectory string  `yanl:"working_directory" json:"working_directory"`
+	WorkingDirectory string  `yaml:"working_directory" json:"working_directory"`
 }
 
 func createDefaultConfig() error {

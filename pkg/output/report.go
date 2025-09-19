@@ -14,6 +14,9 @@ type Report struct {
 	SeverityCount     map[string]int
 	vulnerabilities   int
 	misconfigurations int
+	// K8s specific fields
+	ClusterName string         `json:"ClusterName,omitempty"`
+	Resources   []*K8sResource `json:"Resources,omitempty"`
 }
 
 type Result struct {
@@ -22,6 +25,14 @@ type Result struct {
 	Vulnerabilities   []Vulnerability
 	Misconfigurations []Misconfiguration
 	Secrets           []Secret
+}
+
+type K8sResource struct {
+	Kind      string                   `json:"Kind"`
+	Name      string                   `json:"Name"`
+	Namespace string                   `json:"Namespace,omitempty"`
+	Metadata  []map[string]interface{} `json:"Metadata"`
+	Results   []*Result                `json:"Results"`
 }
 
 func FromJSON(imageName string, content string) (*Report, error) {
@@ -37,6 +48,47 @@ func FromJSON(imageName string, content string) (*Report, error) {
 	return &report, nil
 }
 
+func FromK8sJSON(clusterName, content string) (*Report, error) {
+	logger.Debugf("Parsing K8s JSON report")
+	var k8sReport struct {
+		ClusterName string         `json:"ClusterName"`
+		Resources   []*K8sResource `json:"Resources"`
+	}
+
+	if err := json.Unmarshal([]byte(content), &k8sReport); err != nil {
+		logger.Errorf("Failed to parse K8s JSON report. %s", err)
+		return nil, err
+	}
+
+	// Extract namespace from metadata if not set and parse from target
+	for _, resource := range k8sReport.Resources {
+		if resource.Namespace == "" {
+			// For cluster-scoped resources, keep namespace empty
+			if resource.Kind == "ClusterRole" || resource.Kind == "ClusterRoleBinding" ||
+				resource.Kind == "PersistentVolume" || resource.Kind == "Node" {
+				resource.Namespace = "" // Keep empty for cluster-scoped
+			}
+			// Could add more sophisticated parsing here based on target format
+		}
+	}
+
+	report := &Report{
+		ClusterName: k8sReport.ClusterName,
+		Resources:   k8sReport.Resources,
+		Results:     []*Result{}, // Initialize empty
+	}
+
+	// Flatten Resources into Results for compatibility with existing UI components
+	for _, resource := range k8sReport.Resources {
+		for _, result := range resource.Results {
+			report.Results = append(report.Results, result)
+		}
+	}
+
+	report.Process()
+	return report, nil
+}
+
 func (r *Report) Process() {
 	r.SeverityMap = make(map[string][]*Result)
 	r.SeverityCount = make(map[string]int)
@@ -44,35 +96,19 @@ func (r *Report) Process() {
 	issueCount := 0
 
 	for _, result := range r.Results {
-		r.processVulnerability(result, result.Vulnerabilities, issueCount)
-		r.processMisconfiguration(result, result.Misconfigurations, issueCount)
-		r.processSecrets(result, result.Secrets, issueCount)
+		processIssues(r, result, result.Vulnerabilities, issueCount)
+		processIssues(r, result, result.Misconfigurations, issueCount)
+		processIssues(r, result, result.Secrets, issueCount)
 	}
 
 	_ = r
 }
 
-func (r *Report) processVulnerability(result *Result, issues []Vulnerability, count int) {
-	for _, m := range issues {
+func processIssues[T Vulnerability | Misconfiguration | Secret](r *Report, result *Result, issues []T, count int) {
+	for _, i := range issues {
 		count++
-		result.Issues = append(result.Issues, m)
-		r.processIssue(result.Target, m)
-	}
-}
-
-func (r *Report) processMisconfiguration(result *Result, issues []Misconfiguration, count int) {
-	for _, m := range issues {
-		result.Issues = append(result.Issues, m)
-		count++
-		r.processIssue(result.Target, m)
-	}
-}
-
-func (r *Report) processSecrets(result *Result, issues []Secret, count int) {
-	for _, m := range issues {
-		count++
-		result.Issues = append(result.Issues, m)
-		r.processIssue(result.Target, m)
+		result.Issues = append(result.Issues, Issue(i))
+		r.processIssue(result.Target, Issue(i))
 	}
 }
 
@@ -114,7 +150,12 @@ func (r *Result) GetSeverityCounts() map[string]int {
 	for _, m := range r.Misconfigurations {
 		severities[m.Severity]++
 	}
-
+	for _, v := range r.Vulnerabilities {
+		severities[v.Severity]++
+	}
+	for _, s := range r.Secrets {
+		severities[s.Severity]++
+	}
 	return severities
 }
 

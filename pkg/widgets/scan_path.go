@@ -44,7 +44,7 @@ func (w *ScanPathWidget) Layout(g *gocui.Gui) error {
 		_ = tml.Fprintf(v, " <blue>%s</blue>", w.body)
 	}
 
-	v.Title = " Current Scan Path "
+	v.Title = " Current Scan Path (p to change)"
 	w.v = v
 	return nil
 }

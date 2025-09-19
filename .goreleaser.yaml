@@ -1,6 +1,8 @@
 builds:
   - id: lazytrivy
     main: .
+    ldflags:
+      - -s -w
     binary: lazytrivy
     env:
       - CGO_ENABLED=0
@@ -15,7 +17,6 @@ builds:
 archives:
   - format: binary
     name_template: "{{ .Binary}}-{{ .Os }}-{{ .Arch }}"
-
 
 release:
   prerelease: auto

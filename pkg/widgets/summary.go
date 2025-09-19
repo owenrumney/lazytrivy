@@ -107,7 +107,8 @@ func (i *SummaryWidget) layoutSecret(g *gocui.Gui) error {
 	v.Subtitle = " Escape or 'q' to close "
 	v.Wrap = true
 	v.TitleColor = gocui.ColorGreen
-	v.FrameColor = gocui.ColorGreen
+	v.FrameColor = gocui.ColorBlue
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	return nil
 }
 
@@ -133,7 +134,7 @@ func (i *SummaryWidget) layoutMisconfiguration(g *gocui.Gui) error {
 		}
 	}
 
-	if len(cause.Code.Lines) > 0 {
+	if cause.Code.Lines != nil && len(cause.Code.Lines) > 0 {
 		lines = append(lines, tml.Sprintf("<green> Code:</green>"))
 		for _, line := range cause.Code.Lines {
 			if line.Truncated {
@@ -159,7 +160,8 @@ func (i *SummaryWidget) layoutMisconfiguration(g *gocui.Gui) error {
 	v.Subtitle = " Escape or 'q' to close "
 	v.Wrap = true
 	v.TitleColor = gocui.ColorGreen
-	v.FrameColor = gocui.ColorGreen
+	v.FrameColor = gocui.ColorBlue
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	return nil
 }
 
@@ -214,7 +216,8 @@ func (i *SummaryWidget) layoutVulnerability(g *gocui.Gui) error {
 	v.Subtitle = " Escape or 'q' to close "
 	v.Wrap = true
 	v.TitleColor = gocui.ColorGreen
-	v.FrameColor = gocui.ColorGreen
+	v.FrameColor = gocui.ColorBlue
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	return nil
 }
 

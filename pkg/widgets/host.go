@@ -49,6 +49,7 @@ func (w *HostWidget) Layout(g *gocui.Gui) error {
 	}
 
 	v.Title = " Host "
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	w.v = v
 	return nil
 }

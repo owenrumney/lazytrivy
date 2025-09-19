@@ -75,7 +75,8 @@ func (w *PathChangeWidget) Layout(g *gocui.Gui) error {
 		g.Cursor = true
 
 		v.TitleColor = gocui.ColorGreen
-		v.FrameColor = gocui.ColorGreen
+		v.FrameColor = gocui.ColorBlue
+		v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 		fmt.Fprintln(v, w.currentPath)
 
 		v.SetCursor(len(w.currentPath), 0)

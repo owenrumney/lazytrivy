@@ -1,3 +1,4 @@
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/owenrumney/lazytrivy)](https://goreportcard.com/report/github.com/owenrumney/lazytrivy)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/owenrumney/lazytrivy/blob/master/LICENSE)
 [![Github Release](https://img.shields.io/github/release/owenrumney/lazytrivy.svg)](https://github.com/owenrumney/lazytrivy/releases)
@@ -5,43 +6,42 @@
 
 # lazytrivy
 
-lazytrivy is a wrapper for [Trivy](https://github.com/aquasecurity/trivy) that allows you to run Trivy without
-remembering the command arguments.
 
-The idea was very heavily inspired by the superb tools from [Jesse Duffield](https://github.com/jesseduffield) (
-lazydocker, lazynpm, lazygit)
+lazytrivy is a terminal UI wrapper for [Trivy](https://github.com/aquasecurity/trivy) that lets you run Trivy scans without remembering all the command arguments. It now uses the latest Trivy binary directly (no Docker image required).
 
-![Scan All Images](./.github/images/scan_all.png)
+
+Inspired by [Jesse Duffield](https://github.com/jesseduffield)'s superb tools (lazydocker, lazynpm, lazygit).
+
+
+![LazyTrivy UI](./.github/images/lazytrivy_ui.gif)
+
 
 ## Features
 
-- Image Scanning
-  - [Scan all images on your system](#scanning-all-local-images)
-  - [Scan a single image](#scanning-a-specific-image)
-  - [Scan a remote image](#scanning-a-remote-image)
-- File System Scanning
-  - [Scan a filesystem for vulnerabilities and misconfigurations](#scanning-a-filesystem)
+- **Image Scanning**
+  - Scan all images on your system
+  - Scan a single image
+  - Scan a remote image
+- **File System Scanning**
+  - Scan a filesystem for vulnerabilities, misconfigurations, and secrets
+- **Kubernetes Scanning (Experimental)**
+  - Scan K8s resources for vulnerabilities and misconfigurations *(experimental, subject to user feedback)*
 
-## What does it do
 
-lazytrivy will run Trivy in a docker container and display the results in a terminal UI, the intention is that this will make it more stable across all platforms.
+## What does it do?
 
-When running a Filesystem scan, lazytrivy will mount the target dir in the container and run Trivy against it.
+lazytrivy provides a fast, interactive terminal UI for running Trivy scans. It displays results in a clear, navigable interface and helps you select images, filesystems, or Kubernetes resources to scan. Trivy is run directly (no Docker required), so you always get the latest features and performance.
 
-Trivy intermittently downloads the latest DB - while lazytrivy maintains a cache, if you experience a delay in the scanning of an image or filesystem, it is likely trivy is running a download.
+Trivy will periodically download the latest vulnerability database. lazytrivy maintains a cache, but if you experience a delay, it's likely Trivy is updating its DB.
 
-If you're interested in seeing what's happening behind the scenes in Docker, I'd thoroughly recommend using [LazyDocker](https://github.com/jesseduffield/lazydocker).
 
 
 ## Installation
 
-### Prerequisites
-
-In order for lazytrivy to be cross-platform, it uses the Trivy docker image. This means that you will need to have Docker running on your machine for lazytrivy to work.
 
 #### Install with Go
 
-The quickest way to install if you have `Go` installed is to get the latest with `go install`
+If you have Go installed:
 
 ```bash
 go install github.com/owenrumney/lazytrivy@latest
@@ -49,11 +49,12 @@ go install github.com/owenrumney/lazytrivy@latest
 
 #### Download from Releases
 
-Alternatively, you can get the latest releases from [GitHub](https://github.com/owenrumney/lazytrivy)
+Get the latest releases from [GitHub](https://github.com/owenrumney/lazytrivy/releases)
+
 
 ### Config
 
-A config file can be added to `~/.config/lazytrivy/config.yml` to set default options.
+Optionally, add a config file at `~/.config/lazytrivy/config.yml`:
 
 ```yaml
 vulnerability:
@@ -65,110 +66,73 @@ filesystem:
 cachedirectory: ~/.cache
 debug: true
 trace: false
-
 ```
+
 #### Config via UI
 
-Settings can be adjusted via the UI by pressing the `,` key at any time. 
+Settings can be adjusted via the UI by pressing the `,` key at any time.
 
-![Settings](./.github/images/settings.gif)
+![Settings Screenshot](./.github/images/settings.png)
 
 By setting `debug` to true, additional logs will be generated in `/tmp/lazytrivy.log`
 
+
 ## Usage
 
-`lazytrivy` is super easy to use, just run it with the following command:
+`lazytrivy` is easy to use. Run it with:
 
 ```bash
-lazytrivy --help           
-
-Usage:
-  lazytrivy [command]
+lazytrivy --help
+```
 
 Available Commands:
-  filesystem  Launch lazytrivy in filesystem scanning mode
-  help        Help about any command
-  image       Launch lazytrivy in image scanning mode
+- `image`       Launch lazytrivy in image scanning mode
+- `filesystem`  Launch lazytrivy in filesystem scanning mode
+- `k8s`         Launch lazytrivy in Kubernetes scanning mode *(experimental)*
+- `help`        Help about any command
 
 Flags:
-      --debug                Launch with debug logging
-      --docker-host string   Docker host to connect to (default "unix:///var/run/docker.sock")
-  -h, --help                 help for lazytrivy
-      --trace                Launch with trace logging
+- `--debug`     Launch with debug logging
+- `--trace`     Launch with trace logging
 
-Use "lazytrivy [command] --help" for more information about a command.
+Use `lazytrivy [command] --help` for more information about a command.
 
-```
 
 ### Viewing logs
 
-Logs are generated in `$HOME/.lazytrivy/logs/lazytrivy.log` with the default level at `info`. You can change the log level by setting the `--debug` flag.
+Logs are generated in `$HOME/.lazytrivy/logs/lazytrivy.log` (default level: `info`). Use the `--debug` flag for more details, or `--trace` for verbose output.
 
-To get even more information (more than you need), you can set the `--trace` flag. This will generate a lot of logs, so be careful and most of it is for tracking the position of the cursor, Docker events etc.
-
-### Setting the docker host
-
-By default, lazytrivy will connect to the docker daemon on the local machine by looking at the current context.
-
-The default docker host is `unix:///var/run/docker.sock`. If you are running Docker on a remote host, you can set the docker host with the `--docker-host` flag.
-
-```bash
 
 ### Starting in a specific mode
 
-You can start `lazytrivy` in a specific mode using `images` or `filesystem`:
+You can start `lazytrivy` in a specific mode using `image`, `filesystem`, or `k8s`:
 
-For example, to scan a specific filesystem folder, you could run:
-
-```bash
-lazytrivy fs --path /home/owen/code/github/owenrumney/example
-```
-
-This will start in filesystem mode pointing to the specified path. If no path is provided it will point to the current working directory.
-
-#### Running with Podman
-
-lazytrivy will work with podman in non-root mode, you do however need to be careful to either start podman in a different terminal to lazytrivy or pipe the podman output to `/dev/null`.
-
-For example, you can start podman with 
+For example, to scan a specific filesystem folder:
 
 ```bash
-podman system service -t 3600 unix:///tmp/podman-run-1000/podman/podman.sock 2>/dev/null  &
+lazytrivy filesystem --path /home/owen/code/github/owenrumney/example
 ```
 
-then start lazytrivy with
+To scan Kubernetes resources (experimental):
 
 ```bash
-lazytrivy --docker-host unix:///tmp/podman-run-1000/podman/podman.sock image
+lazytrivy k8s --context my-kube-context
 ```
 
-### Scanning all local images
 
-Pressing `a` will scan all the images that are shown in the left hand pane. On completion, you will be shown a
-summary of any vulnerabilities found.
+## Screenshots
 
-You can then scan individual images to get more details
+### Main UI
+![Main UI](./.github/images/lazytrivy_ui.gif)
 
-![Scanning all images](./.github/images/scan_all_images.gif)
+### Image Scanning
+![Image Scanning](./.github/images/image_scanning.png)
 
-### Scanning a specific image
+### Filesystem Scanning
+![Filesystem Scanning](./.github/images/filesystem_scanning.png)
 
-Select an image from the left hand pane and press `s` to scan it. Use the left and right arrow keys to switch between
-views and up down arrow keys to select an image.
+### Kubernetes Scanning (Experimental)
+![K8s Scanning](./.github/images/kubernetes_scanning.png)
 
-Press `s` to scan the currently selected image.
-
-![Scanning an image](./.github/images/scan_individual_images.gif)
-
-### Scanning a remote image
-
-To scan an image that is not already locally on the machine, you can use the `r` key to scan a remote image.
-
-![Scanning a remote image](./.github/images/scan_remote_image.gif)
-
-
-### Scanning a filesystem
-
-To scan a filessystem, you can use the `w` key to switch to Filesystem mode, from there you will get all the vulnerabilities, misconfigurations and secrets from the current working directory
-
-![Scanning a filesystem](./.github/images/scan_filesystem.gif)
+### Settings
+![Settings](./.github/images/settings.png)

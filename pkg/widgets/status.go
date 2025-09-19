@@ -42,6 +42,7 @@ func (w *StatusWidget) Layout(g *gocui.Gui) error {
 	}
 
 	v.Title = " Status "
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	w.v = v
 	return nil
 }

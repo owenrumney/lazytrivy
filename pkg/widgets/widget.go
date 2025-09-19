@@ -3,12 +3,13 @@ package widgets
 import "github.com/awesome-gocui/gocui"
 
 const (
-	Account      = "account"
 	Announcement = "announcement"
 	Files        = "files"
 	Filter       = "filter"
 	Host         = "host"
 	Images       = "images"
+	K8sContext   = "k8scontext"
+	K8sTree      = "k8stree"
 	Menu         = "menu"
 	PathChange   = "pathchange"
 	Remote       = "remote"
@@ -28,6 +29,7 @@ type Widget interface {
 type Tab string
 
 const (
-	VulnerabilitiesTab Tab = "Vulnerabilities"
-	FileSystemTab      Tab = "FileSystem"
+	ImagesTab     Tab = "Image"
+	FileSystemTab Tab = "FileSystem"
+	K8sTab        Tab = "Kubernetes"
 )

@@ -7,19 +7,20 @@ import (
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/filesystem"
+	"github.com/owenrumney/lazytrivy/pkg/controllers/k8s"
+	"github.com/owenrumney/lazytrivy/pkg/engine"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 
 	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/image"
-	"github.com/owenrumney/lazytrivy/pkg/dockerClient"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
 type Controller struct {
 	sync.Mutex
 	cui              *gocui.Gui
-	dockerClient     *dockerClient.Client
+	engine           *engine.Client
 	activeController base.ControllerView
 	views            []gocui.Manager
 	config           *config.Config
@@ -33,20 +34,22 @@ func New(tab widgets.Tab, cfg *config.Config) (*Controller, error) {
 		return nil, fmt.Errorf("failed to create gui: %w", err)
 	}
 
-	dkrClient, err := dockerClient.NewClient(cfg)
+	dkrClient, err := engine.NewClient(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	mainController := &Controller{
-		cui:          cui,
-		dockerClient: dkrClient,
-		config:       cfg,
+		cui:    cui,
+		engine: dkrClient,
+		config: cfg,
 	}
 
 	switch tab {
 	case widgets.FileSystemTab:
 		mainController.activeController = filesystem.NewFilesystemController(cui, dkrClient, cfg)
+	case widgets.K8sTab:
+		mainController.activeController = k8s.NewK8sController(cui, dkrClient, cfg)
 	default:
 		mainController.activeController = image.NewVulnerabilityController(cui, dkrClient, cfg)
 
@@ -55,8 +58,8 @@ func New(tab widgets.Tab, cfg *config.Config) (*Controller, error) {
 	return mainController, nil
 }
 
-func (c *Controller) DockerClient() *dockerClient.Client {
-	return c.dockerClient
+func (c *Controller) Engine() *engine.Client {
+	return c.engine
 }
 
 func (c *Controller) CreateWidgets() error {
@@ -128,6 +131,7 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 	choices := []string{
 		"**2*** File System",
 		"**2*** Image",
+		"**2*** Kubernetes",
 	}
 
 	w, y := c.cui.Size()
@@ -135,9 +139,11 @@ func (c *Controller) switchMode(gui *gocui.Gui, _ *gocui.View) error {
 	choiceWidget := widgets.NewChoiceWidget("mode", w, y, "Scanning Mode", choices, func(selectedMode string) error {
 		switch selectedMode {
 		case "File System":
-			c.activeController = filesystem.NewFilesystemController(c.cui, c.dockerClient, c.config)
+			c.activeController = filesystem.NewFilesystemController(c.cui, c.engine, c.config)
+		case "Kubernetes":
+			c.activeController = k8s.NewK8sController(c.cui, c.engine, c.config)
 		default:
-			c.activeController = image.NewVulnerabilityController(c.cui, c.dockerClient, c.config)
+			c.activeController = image.NewVulnerabilityController(c.cui, c.engine, c.config)
 		}
 
 		if err := c.CreateWidgets(); err != nil {

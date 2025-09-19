@@ -3,12 +3,13 @@ package image
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
-func vulnerabilityLayout(g *gocui.Gui) error {
+func layout(g *gocui.Gui) error {
 
 	imagesWidth := 0
 	viewNames := []string{widgets.Images, widgets.Host, widgets.Results, widgets.Menu, widgets.Status}
@@ -20,6 +21,9 @@ func vulnerabilityLayout(g *gocui.Gui) error {
 			return fmt.Errorf("failed to get view %s: %w", viewName, err)
 		}
 		w, _ := v.Size()
+		if v.Name() == widgets.Images {
+			w = int(math.Max(float64(maxX)/5, 35))
+		}
 		y := 0
 		nextW := w
 		nextH := maxY - 4

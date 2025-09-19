@@ -67,7 +67,8 @@ func (i *RemoteImageWidget) Layout(g *gocui.Gui) error {
 		v.Editable = true
 		g.Cursor = true
 		v.TitleColor = gocui.ColorGreen
-		v.FrameColor = gocui.ColorGreen
+		v.FrameColor = gocui.ColorBlue
+		v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	}
 	return nil
 }

@@ -26,7 +26,7 @@ func (c *Controller) ScanImage(ctx context.Context) {
 	defer c.Unlock()
 	cancellable, c.ActiveCancel = context.WithCancel(ctx)
 	go func() {
-		report, err := c.DockerClient.ScanImage(cancellable, c.selectedImage, c.Config, c)
+		report, err := c.Engine.ScanImage(cancellable, c.selectedImage, c.Config, c)
 		if err != nil {
 			return
 		}
@@ -90,7 +90,7 @@ func (c *Controller) ScanAllImages(gui *gocui.Gui, _ *gocui.View) error {
 	go func() {
 		var reports []*output.Report
 
-		err := c.DockerClient.ScanAllImages(cancellable, c.Config, c, func(report *output.Report) error {
+		err := c.Engine.ScanAllImages(cancellable, c.Config, c, func(report *output.Report) error {
 			reports = append(reports, report)
 			if err := c.RenderResultsReportSummary(reports); err != nil {
 				c.UpdateStatus(err.Error())
@@ -127,7 +127,11 @@ func (c *Controller) RefreshImages() error {
 	c.UpdateStatus("Refreshing images")
 	defer c.ClearStatus()
 
-	images := c.DockerClient.ListImages()
+	images, err := c.Engine.ListImages()
+	if err != nil {
+		c.UpdateStatus(fmt.Sprintf("Error listing images: %v", err))
+		return err
+	}
 
 	w, _ := c.Cui.Size()
 
@@ -143,6 +147,7 @@ func (c *Controller) CancelCurrentScan(gui *gocui.Gui, _ *gocui.View) error {
 	c.Lock()
 	defer c.Unlock()
 	if c.ActiveCancel != nil {
+		logger.Debugf("Cancelling current scan")
 		c.UpdateStatus("Current scan cancelled.")
 		c.ActiveCancel()
 		c.ActiveCancel = nil

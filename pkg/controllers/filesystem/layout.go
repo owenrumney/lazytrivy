@@ -3,6 +3,7 @@ package filesystem
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
@@ -19,6 +20,9 @@ func layout(g *gocui.Gui) error {
 			return fmt.Errorf("failed to get view %s: %w", viewName, err)
 		}
 		w, _ := v.Size()
+		if v.Name() == widgets.Files {
+			w = int(math.Max(float64(maxX)/5, 35))
+		}
 		y := 0
 		nextW := w
 		nextH := maxY - 4

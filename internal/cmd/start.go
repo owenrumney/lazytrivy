@@ -9,7 +9,7 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
-func startGUI(tab widgets.Tab) error {
+func start(tab widgets.Tab) error {
 	logger.Configure()
 
 	workingDir, err := os.Getwd()

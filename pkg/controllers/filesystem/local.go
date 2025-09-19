@@ -10,7 +10,7 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
-func (c *Controller) CancelCurrentScan(_ *gocui.Gui, _ *gocui.View) error {
+func (c *Controller) cancelCurrentScan(_ *gocui.Gui, _ *gocui.View) error {
 	c.Lock()
 	defer c.Unlock()
 	if c.ActiveCancel != nil {
@@ -47,25 +47,13 @@ func (c *Controller) moveViewRight(*gocui.Gui, *gocui.View) error {
 
 func (c *Controller) scanVulnerabilities() error {
 	logger.Debugf("scanning for vulnerabilities")
-	var scanChecks []string
-
-	if c.Config.Scanner.ScanVulnerabilities {
-		scanChecks = append(scanChecks, "vuln")
-	}
-	if c.Config.Scanner.ScanMisconfiguration {
-		scanChecks = append(scanChecks, "misconfig")
-	}
-	if c.Config.Scanner.ScanSecrets {
-		scanChecks = append(scanChecks, "secret")
-	}
-
 	go func() {
 		var cancellable context.Context
 		c.Lock()
 		defer c.Unlock()
 		cancellable, c.ActiveCancel = context.WithCancel(context.Background())
 
-		report, err := c.DockerClient.ScanFilesystem(cancellable, c.workingDirectory, scanChecks, c.Config.Insecure, c)
+		report, err := c.Engine.ScanFilesystem(cancellable, c.workingDirectory, c.Config, c)
 		if err != nil {
 			logger.Errorf("error scanning filesystem: %v", err)
 		}
@@ -108,9 +96,7 @@ func (c *Controller) scanVulnerabilities() error {
 				}
 			}
 		}
-
 	}()
-
 	return nil
 }
 
@@ -129,14 +115,14 @@ func (c *Controller) showPathChange(gui *gocui.Gui, _ *gocui.View) error {
 	maxX, maxY := gui.Size()
 
 	gui.Cursor = true
-	pathChange, err := widgets.NewPathChangeWidget(widgets.PathChange, maxX, maxY, 150, c.workingDirectory, c)
+	pathBrowser, err := widgets.NewPathBrowserWidget(widgets.PathChange, maxX, maxY, 150, c.workingDirectory, c)
 	if err != nil {
-		return fmt.Errorf("failed to create pathchange input: %w", err)
+		return fmt.Errorf("failed to create path browser: %w", err)
 	}
 	gui.Update(func(g *gocui.Gui) error {
 		gui.Mouse = false
-		if err := pathChange.Layout(gui); err != nil {
-			return fmt.Errorf("failed to layout pathchange input: %w", err)
+		if err := pathBrowser.Layout(gui); err != nil {
+			return fmt.Errorf("failed to layout path browser: %w", err)
 		}
 		_, err := gui.SetCurrentView(widgets.PathChange)
 		if err != nil {
