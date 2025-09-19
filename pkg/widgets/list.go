@@ -83,18 +83,37 @@ func (w *ListWidget) nextItem(_ *gocui.Gui, v *gocui.View) error {
 }
 
 func (w *ListWidget) CurrentItemPosition() int {
+	logger.Debugf("CurrentItemPosition: currentPos=%d, body length=%d", w.currentPos, len(w.body))
+
 	if len(w.body) == 0 || w.currentPos >= len(w.body) {
+		logger.Debugf("CurrentItemPosition: Invalid position, returning -1")
 		return -1
 	}
 
 	currentLine := w.body[w.currentPos]
+	logger.Debugf("CurrentItemPosition: currentLine at pos %d: %s", w.currentPos, currentLine)
+
 	if strings.HasPrefix(currentLine, "**") {
-		idString := strings.TrimPrefix(strings.Split(currentLine, "***")[0], "**")
-		id, err := strconv.Atoi(idString)
-		if err == nil {
-			return id
+		parts := strings.Split(currentLine, "***")
+		if len(parts) >= 2 {
+			idString := strings.TrimPrefix(parts[0], "**")
+			logger.Debugf("CurrentItemPosition: Extracted ID string: '%s'", idString)
+			id, err := strconv.Atoi(idString)
+			if err == nil {
+				logger.Debugf("CurrentItemPosition: Parsed ID: %d", id)
+				return id
+			} else {
+				logger.Debugf("CurrentItemPosition: Failed to parse ID '%s': %v", idString, err)
+			}
+		} else {
+			logger.Debugf("CurrentItemPosition: Split failed, parts: %v", parts)
 		}
+	} else {
+		logger.Debugf("CurrentItemPosition: Line doesn't start with **, returning currentPos: %d", w.currentPos)
+		return w.currentPos
 	}
+
+	logger.Debugf("CurrentItemPosition: Fallback, returning -1")
 	return -1
 }
 

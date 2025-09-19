@@ -6,9 +6,9 @@ import (
 	"github.com/awesome-gocui/gocui"
 	"github.com/owenrumney/lazytrivy/pkg/config"
 	"github.com/owenrumney/lazytrivy/pkg/controllers/base"
-	"github.com/owenrumney/lazytrivy/pkg/dockerClient"
+	"github.com/owenrumney/lazytrivy/pkg/engine"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
-	"github.com/owenrumney/lazytrivy/pkg/output"
+
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
@@ -19,7 +19,7 @@ type Controller struct {
 
 func (c *Controller) SetWorkingDirectory(dir string) {
 	c.workingDirectory = dir
-	c.Config.Filesystem.WorkingDirectory = dir
+	c.Config.WorkingDirectory = dir
 
 	if v, ok := c.Views[widgets.ScanPath]; ok {
 		if sp, ok := v.(*widgets.ScanPathWidget); ok {
@@ -28,19 +28,19 @@ func (c *Controller) SetWorkingDirectory(dir string) {
 	}
 }
 
-func NewFilesystemController(cui *gocui.Gui, dockerClient *dockerClient.Client, cfg *config.Config) *Controller {
+func NewFilesystemController(cui *gocui.Gui, Engine *engine.Client, cfg *config.Config) *Controller {
 
 	return &Controller{
 		&base.Controller{
-			Cui:          cui,
-			DockerClient: dockerClient,
-			Views:        make(map[string]widgets.Widget),
-			LayoutFunc:   layout,
-			HelpFunc:     help,
-			Config:       cfg,
+			Cui:        cui,
+			Engine:     Engine,
+			Views:      make(map[string]widgets.Widget),
+			LayoutFunc: layout,
+			HelpFunc:   help,
+			Config:     cfg,
 		},
 		&state{
-			workingDirectory: cfg.Filesystem.WorkingDirectory,
+			workingDirectory: cfg.WorkingDirectory,
 		},
 	}
 }
@@ -108,6 +108,16 @@ func (c *Controller) SetSelected(selected string) {
 func (c *Controller) RenderFilesystemFileReport() error {
 	if v, ok := c.Views[widgets.Results].(*widgets.FSResultWidget); ok {
 		logger.Tracef("Rendering filesystem report for %s", c.currentTarget)
+		if c.currentReport == nil {
+			return fmt.Errorf("no report available")
+		}
+		if c.currentTarget == "" {
+			return fmt.Errorf("no target selected")
+		}
+		if c.currentReport == nil {
+			return fmt.Errorf("no report available")
+		}
+
 		result, err := c.currentReport.GetResultForTarget(c.currentTarget)
 		if err != nil {
 			return err
@@ -115,7 +125,6 @@ func (c *Controller) RenderFilesystemFileReport() error {
 		c.currentResult = result
 
 		if result.HasIssues() {
-
 			v.RenderReport(result, c.currentReport, "ALL")
 			if _, err := c.Cui.SetCurrentView(widgets.Results); err != nil {
 				return fmt.Errorf("failed to set current view: %w", err)
@@ -137,14 +146,6 @@ func (c *Controller) RenderFilesystemFileReport() error {
 	return nil
 }
 
-func (c *Controller) RenderFilesystemFileReportd(report *output.Report) error {
-	if v, ok := c.Views[widgets.Results].(*widgets.FSResultWidget); ok {
-		v.UpdateResultsTable([]*output.Report{report}, c.Cui)
-
-	}
-	return fmt.Errorf("failed to render results report summary") //nolint:goerr113
-}
-
-func (c *Controller) ScanVulnerabilities(g *gocui.Gui, _ *gocui.View) error {
+func (c *Controller) Scan(g *gocui.Gui, _ *gocui.View) error {
 	return c.scanVulnerabilities()
 }

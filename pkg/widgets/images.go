@@ -79,13 +79,14 @@ func (w *ImagesWidget) Layout(g *gocui.Gui) error {
 	v.Title = " Images "
 	v.Highlight = true
 	v.Highlight = true
-	v.SelBgColor = gocui.ColorGreen | gocui.AttrDim
-	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
+	v.SelBgColor = gocui.ColorDefault | gocui.AttrDim
+	v.SelFgColor = gocui.ColorBlue | gocui.AttrBold
 	if g.CurrentView() == v {
-		v.FrameColor = gocui.ColorGreen
+		v.FrameColor = gocui.ColorBlue
 	} else {
 		v.FrameColor = gocui.ColorDefault
 	}
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 
 	return nil
 }

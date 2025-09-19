@@ -67,9 +67,9 @@ func (w *AnnouncementWidget) ConfigureKeys(*gocui.Gui) error {
 	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEsc, gocui.ModNone, w.close); err != nil {
 		return err
 	}
-	// if err := w.ctx.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.close); err != nil {
-	// 	return err
-	// }
+	if err := w.ctx.SetKeybinding(w.name, gocui.KeyEnter, gocui.ModNone, w.close); err != nil {
+		return err
+	}
 
 	if err := w.ctx.SetKeybinding(w.name, 'q', gocui.ModNone, w.close); err != nil {
 		return err
@@ -97,7 +97,8 @@ func (w *AnnouncementWidget) Layout(g *gocui.Gui) error {
 	v.Title = fmt.Sprintf(" %s ", w.title)
 	v.Subtitle = " ESC to close "
 	v.Wrap = true
-	v.FrameColor = gocui.ColorGreen
+	v.FrameColor = gocui.ColorBlue
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	w.v = v
 
 	return w.ConfigureKeys(g)

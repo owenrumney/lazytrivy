@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/awesome-gocui/gocui"
+	"github.com/liamg/tml"
 	"github.com/owenrumney/lazytrivy/pkg/logger"
 	"github.com/owenrumney/lazytrivy/pkg/output"
 )
@@ -27,6 +28,9 @@ type ResultsWidget struct {
 	currentReport          *output.Report
 	mode                   ResultsMode
 	v                      *gocui.View
+
+	// Common fields for deep dive functionality
+	issues []output.Issue // Common issue storage
 }
 
 func NewResultsWidget(name string, generateReportFunc func(severity string, gui *gocui.Gui),
@@ -106,13 +110,14 @@ func (w *ResultsWidget) layout(g *gocui.Gui, x int, y int, wi int, h int) error 
 	w.v = v
 	v.Title = " Results "
 	v.Highlight = true
-	v.SelBgColor = gocui.ColorGreen
-	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
+	v.SelBgColor = gocui.ColorDefault
+	v.SelFgColor = gocui.ColorBlue | gocui.AttrBold
 	if g.CurrentView() == v {
-		v.FrameColor = gocui.ColorGreen
+		v.FrameColor = gocui.ColorBlue
 	} else {
 		v.FrameColor = gocui.ColorDefault
 	}
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	return nil
 }
 
@@ -136,6 +141,47 @@ func (w *ResultsWidget) refreshView() {
 
 func (w *ResultsWidget) CurrentReport() *output.Report {
 	return w.currentReport
+}
+
+// Common deep dive implementation for DetailsResultMode
+func (w *ResultsWidget) DiveDeeper(g *gocui.Gui, v *gocui.View) error {
+	logger.Debugf("Base DiveDeeper called, mode: %d", w.mode)
+	if w.mode == DetailsResultMode {
+		id := w.CurrentItemPosition()
+		logger.Debugf("Base DiveDeeper: CurrentItemPosition returned: %d, issues length: %d", id, len(w.issues))
+		if id >= 0 && id < len(w.issues) {
+			issue := w.issues[id]
+			logger.Debugf("Base DiveDeeper: Opening summary for issue: %s", issue.GetID())
+			x, y, wi, h := w.v.Dimensions()
+
+			summary, err := NewSummaryWidget("summary", x+2, y+2, wi-4, h-4, w.ctx, issue)
+			if err != nil {
+				logger.Debugf("Base DiveDeeper: Error creating summary widget: %v", err)
+				return err
+			}
+
+			g.Update(func(g *gocui.Gui) error {
+				if err := summary.Layout(g); err != nil {
+					return fmt.Errorf("failed to layout summary widget: %w", err)
+				}
+				_, err := g.SetCurrentView("summary")
+				if err != nil {
+					return fmt.Errorf("failed to set current view: %w", err)
+				}
+				return nil
+			})
+		} else {
+			logger.Debugf("Base DiveDeeper: Invalid issue index %d - returning early", id)
+		}
+	}
+	return nil
+}
+
+// Common issue line formatting
+func (w *ResultsWidget) FormatIssueLine(index int, issue output.Issue) string {
+	f, b := colouredSeverity(issue.GetSeverity())
+	return fmt.Sprintf("**%d***  %s %-16s %s", index,
+		tml.Sprintf(f+"%-12s"+b, issue.GetSeverity()), issue.GetID(), issue.GetTitle())
 }
 
 func (w *ResultsWidget) RefreshView() {

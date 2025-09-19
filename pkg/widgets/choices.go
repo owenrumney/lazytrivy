@@ -95,7 +95,7 @@ func (w *ChoiceWidget) Layout(g *gocui.Gui) error {
 		v.Clear()
 		for _, line := range w.body {
 			line = stripIdentifierPrefix(line)
-			_, _ = fmt.Fprintln(v, fmt.Sprintf(" %s ", line))
+			_, _ = fmt.Fprintf(v, " %s \n", line)
 		}
 
 		w.SetStartPosition(0)
@@ -108,10 +108,11 @@ func (w *ChoiceWidget) Layout(g *gocui.Gui) error {
 	v.Title = fmt.Sprintf(" %s ", w.title)
 	v.Highlight = true
 	v.Autoscroll = false
-	v.SelBgColor = gocui.ColorGreen
-	v.SelFgColor = gocui.ColorBlack
+	v.SelBgColor = gocui.ColorDefault
+	v.SelFgColor = gocui.ColorBlue | gocui.AttrBold
 	v.Wrap = true
-	v.FrameColor = gocui.ColorGreen
+	v.FrameColor = gocui.ColorBlue
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 
 	return nil
 }

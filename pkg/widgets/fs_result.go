@@ -21,7 +21,6 @@ type FSResultWidget struct {
 	ctx           fsContext
 	currentResult *output.Result
 	results       []*output.Result
-	issues        []output.Issue
 }
 
 func NewFSResultWidget(name string, g fsContext) *FSResultWidget {
@@ -48,7 +47,7 @@ func (w *FSResultWidget) ConfigureKeys(gui *gocui.Gui) error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		if w.results != nil && len(w.results) > 0 {
+		if len(w.results) > 0 {
 			w.UpdateResultsTable([]*output.Report{w.currentReport}, g)
 		}
 		return nil
@@ -63,7 +62,7 @@ func (w *FSResultWidget) ConfigureKeys(gui *gocui.Gui) error {
 	return nil
 }
 
-func (w *FSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
+func (w *FSResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 	switch w.mode {
 	case SummaryResultMode:
 		id := w.CurrentItemPosition()
@@ -74,30 +73,8 @@ func (w *FSResultWidget) diveDeeper(g *gocui.Gui, _ *gocui.View) error {
 		logger.Debugf("Diving deeper into result: %s", w.currentResult.Target)
 		w.GenerateFilteredReport("ALL", g)
 	case DetailsResultMode:
-		x, y, wi, h := w.v.Dimensions()
-
-		var issue output.Issue
-		id := w.CurrentItemPosition()
-		if id >= 0 && id < len(w.issues) {
-			issue = w.issues[id]
-		} else {
-			return nil
-		}
-
-		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, issue)
-		if err != nil {
-			return err
-		}
-		g.Update(func(g *gocui.Gui) error {
-			if err := summary.Layout(g); err != nil {
-				return fmt.Errorf("failed to layout remote input: %w", err)
-			}
-			_, err := g.SetCurrentView("summary")
-			if err != nil {
-				return fmt.Errorf("failed to set current view: %w", err)
-			}
-			return nil
-		})
+		// Use the common deep dive implementation from base ResultsWidget
+		return w.DiveDeeper(g, v)
 	}
 
 	return nil
@@ -117,13 +94,14 @@ func (w *FSResultWidget) Layout(g *gocui.Gui) error {
 	w.v = v
 	v.Title = " Results "
 	v.Highlight = true
-	v.SelBgColor = gocui.ColorGreen
-	v.SelFgColor = gocui.ColorBlack | gocui.AttrBold
+	v.SelBgColor = gocui.ColorDefault
+	v.SelFgColor = gocui.ColorBlue | gocui.AttrBold
 	if g.CurrentView() == v {
-		v.FrameColor = gocui.ColorGreen
+		v.FrameColor = gocui.ColorBlue
 	} else {
 		v.FrameColor = gocui.ColorDefault
 	}
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	return nil
 }
 
@@ -220,7 +198,7 @@ func (w *FSResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui) {
 	w.issues = []output.Issue{}
 
 	var severities []string
-	if w.results != nil && len(w.results) > 0 {
+	if len(w.results) > 0 {
 		severities = append(severities, "[B]ack")
 	}
 	severities = append(severities, "[E]verything")
@@ -250,17 +228,24 @@ func (w *FSResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui) {
 	misconfigurationCount := 0
 	misconfigurations := w.currentResult.GetIssuesForSeverity(severity)
 
-	sort.Slice(misconfigurations, func(i, j int) bool {
-		return severityAsInt(misconfigurations[i].GetSeverity()) < severityAsInt(misconfigurations[j].GetSeverity()) //nolint:scopelint
+	// Deduplicate issues by ID
+	seenIssues := make(map[string]bool)
+	var uniqueIssues []output.Issue
+	for _, issue := range misconfigurations {
+		if !seenIssues[issue.GetID()] {
+			seenIssues[issue.GetID()] = true
+			uniqueIssues = append(uniqueIssues, issue)
+		}
+	}
+
+	sort.Slice(uniqueIssues, func(i, j int) bool {
+		return severityAsInt(uniqueIssues[i].GetSeverity()) < severityAsInt(uniqueIssues[j].GetSeverity()) //nolint:scopelint
 	})
 
-	for _, issue := range misconfigurations {
-
-		f, b := colouredSeverity(issue.GetSeverity())
-		toPrint := fmt.Sprintf("**%d***  %s % -16s %s", misconfigurationCount, tml.Sprintf(f+"% -12s"+b, issue.GetSeverity()),
-			issue.GetID(), issue.GetTitle())
-
-		bodyContent = append(bodyContent, toPrint)
+	for _, issue := range uniqueIssues {
+		// Use the common formatting method
+		line := w.FormatIssueLine(misconfigurationCount, issue)
+		bodyContent = append(bodyContent, line)
 		w.issues = append(w.issues, issue)
 		misconfigurationCount++
 	}

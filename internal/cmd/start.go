@@ -9,7 +9,7 @@ import (
 	"github.com/owenrumney/lazytrivy/pkg/widgets"
 )
 
-func startGUI(tab widgets.Tab) error {
+func start(tab widgets.Tab) error {
 	logger.Configure()
 
 	workingDir, err := os.Getwd()
@@ -34,9 +34,9 @@ func startGUI(tab widgets.Tab) error {
 	}
 
 	if scanPath != "" {
-		cfg.Filesystem.WorkingDirectory = scanPath
+		cfg.WorkingDirectory = scanPath
 	} else {
-		cfg.Filesystem.WorkingDirectory = workingDir
+		cfg.WorkingDirectory = workingDir
 	}
 
 	control, err := gui.New(tab, cfg)

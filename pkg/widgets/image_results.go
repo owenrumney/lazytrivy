@@ -16,9 +16,8 @@ type ImageResultWidget struct {
 	x, y int
 	w, h int
 
-	ctx             vulnerabilityContext
-	reports         []*output.Report
-	vulnerabilities []output.Issue
+	ctx     vulnerabilityContext
+	reports []*output.Report
 }
 
 func NewImageResultWidget(name string, g vulnerabilityContext) *ImageResultWidget {
@@ -49,7 +48,7 @@ func (w *ImageResultWidget) ConfigureKeys(_ *gocui.Gui) error {
 	}
 
 	if err := w.ctx.SetKeyBinding(w.name, 'b', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		if w.reports != nil && len(w.reports) > 0 {
+		if len(w.reports) > 0 {
 			w.UpdateResultsTable(w.reports, g)
 		}
 		return nil
@@ -79,30 +78,8 @@ func (w *ImageResultWidget) diveDeeper(g *gocui.Gui, v *gocui.View) error {
 
 		w.GenerateFilteredReport("ALL", g)
 	case DetailsResultMode:
-		x, y, wi, h := v.Dimensions()
-
-		var vuln output.Issue
-		id := w.CurrentItemPosition()
-		if id >= 0 && id < len(w.vulnerabilities) {
-			vuln = w.vulnerabilities[id]
-		} else {
-			return nil
-		}
-
-		summary, err := NewSummaryWidget("summary", x+2, y+(h/2), wi-2, h-1, w.ctx, vuln)
-		if err != nil {
-			return err
-		}
-		g.Update(func(g *gocui.Gui) error {
-			if err := summary.Layout(g); err != nil {
-				return fmt.Errorf("failed to layout remote input: %w", err)
-			}
-			_, err := g.SetCurrentView("summary")
-			if err != nil {
-				return fmt.Errorf("failed to set current view: %w", err)
-			}
-			return nil
-		})
+		// Use the common deep dive implementation from base ResultsWidget
+		return w.DiveDeeper(g, v)
 	}
 
 	return nil
@@ -181,10 +158,10 @@ func (w *ImageResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui
 		return
 	}
 	w.mode = DetailsResultMode
-	w.vulnerabilities = []output.Issue{}
+	w.issues = []output.Issue{}
 
 	var severities []string
-	if w.reports != nil && len(w.reports) > 0 {
+	if len(w.reports) > 0 {
 		severities = append(severities, "[B]ack")
 	}
 	severities = append(severities, "[E]verything")
@@ -207,6 +184,7 @@ func (w *ImageResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui
 
 	var bodyContent []string //nolint:prealloc
 	vulnCounter := 0
+	seenIssues := make(map[string]bool) // Track duplicates across all results
 
 	for _, result := range results {
 		if len(result.Issues) == 0 {
@@ -222,12 +200,16 @@ func (w *ImageResultWidget) GenerateFilteredReport(severity string, _ *gocui.Gui
 		})
 
 		for _, v := range result.Issues {
-			f, b := colouredSeverity(v.GetSeverity())
-			toPrint := fmt.Sprintf("**%d***  %s % -16s %s", vulnCounter, tml.Sprintf(f+"% -10s"+b, v.GetSeverity()),
-				v.GetID(), v.GetTitle())
+			// Skip duplicates
+			if seenIssues[v.GetID()] {
+				continue
+			}
+			seenIssues[v.GetID()] = true
 
-			bodyContent = append(bodyContent, toPrint)
-			w.vulnerabilities = append(w.vulnerabilities, v)
+			// Use the common formatting method
+			line := w.FormatIssueLine(vulnCounter, v)
+			bodyContent = append(bodyContent, line)
+			w.issues = append(w.issues, v)
 			vulnCounter++
 		}
 	}

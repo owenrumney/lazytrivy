@@ -21,6 +21,6 @@ type vulnerabilityContext interface {
 type fsContext interface {
 	baseContext
 	ShowTarget(ctx context.Context)
-	ScanVulnerabilities(gui *gocui.Gui, view *gocui.View) error
+	Scan(gui *gocui.Gui, view *gocui.View) error
 	SetWorkingDirectory(dir string)
 }

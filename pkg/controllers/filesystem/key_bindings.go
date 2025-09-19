@@ -18,7 +18,7 @@ func (c *Controller) configureKeyBindings() error {
 		return fmt.Errorf("error setting keybinding for view switching: %w", err)
 	}
 
-	if err := c.Cui.SetKeybinding("", 't', gocui.ModNone, c.CancelCurrentScan); err != nil {
+	if err := c.Cui.SetKeybinding("", 't', gocui.ModNone, c.cancelCurrentScan); err != nil {
 		return fmt.Errorf("error setting keybinding for cancelling current scan: %w", err)
 	}
 

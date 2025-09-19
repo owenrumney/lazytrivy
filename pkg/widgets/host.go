@@ -49,11 +49,12 @@ func (w *HostWidget) Layout(g *gocui.Gui) error {
 	}
 
 	v.Title = " Host "
+	v.FrameRunes = []rune{'─', '│', '╭', '╮', '╰', '╯'}
 	w.v = v
 	return nil
 }
 
 func (w *HostWidget) RefreshView() {
 	w.v.Clear()
-	_, _ = fmt.Fprintf(w.v, w.body)
+	_, _ = fmt.Fprintf(w.v, "%s", w.body)
 }
