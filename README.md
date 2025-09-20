@@ -12,10 +12,6 @@ lazytrivy is a terminal UI wrapper for [Trivy](https://github.com/aquasecurity/t
 
 Inspired by [Jesse Duffield](https://github.com/jesseduffield)'s superb tools (lazydocker, lazynpm, lazygit).
 
-
-![LazyTrivy UI](./.github/images/lazytrivy_ui.gif)
-
-
 ## Features
 
 - **Image Scanning**
@@ -121,9 +117,6 @@ lazytrivy k8s --context my-kube-context
 
 
 ## Screenshots
-
-### Main UI
-![Main UI](./.github/images/lazytrivy_ui.gif)
 
 ### Image Scanning
 ![Image Scanning](./.github/images/image_scanning.png)
