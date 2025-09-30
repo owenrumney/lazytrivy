@@ -6,6 +6,7 @@ builds:
     binary: lazytrivy
     env:
       - CGO_ENABLED=0
+      - GOEXPERIMENT=jsonv2
     goos:
       - linux
       - windows
