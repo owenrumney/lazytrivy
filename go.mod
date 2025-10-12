@@ -3,7 +3,7 @@ module github.com/owenrumney/lazytrivy
 go 1.25
 
 require (
-	github.com/aquasecurity/trivy v0.67.0
+	github.com/aquasecurity/trivy v0.67.2
 	github.com/awesome-gocui/gocui v1.1.0
 	github.com/liamg/tml v0.7.0
 	github.com/mattn/go-runewidth v0.0.16
