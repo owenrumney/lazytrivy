@@ -1,9 +1,22 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+
 builds:
   - id: lazytrivy
     main: .
-    ldflags:
-      - -s -w
-    binary: lazytrivy
+    ldflags: -s -w
     env:
       - CGO_ENABLED=0
       - GOEXPERIMENT=jsonv2
@@ -16,11 +29,16 @@ builds:
       - arm64
 
 archives:
-  - format: binary
-    name_template: "{{ .Binary}}-{{ .Os }}-{{ .Arch }}"
+  - formats: [binary]
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: "{{ .Binary}}-{{ .OS }}-{{ .Arch }}" 
 
 release:
-  prerelease: auto
   github:
     owner: owenrumney
     name: lazytrivy
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
