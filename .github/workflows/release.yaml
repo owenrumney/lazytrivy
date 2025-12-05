@@ -17,9 +17,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: ./go.mod
+
 
       - name: Aggressive cleanup
         run: |
@@ -59,6 +57,10 @@ jobs:
           docker system prune -af || true
           docker builder prune -af || true
           df -h
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
 
       - name: Release
         uses: goreleaser/goreleaser-action@v6
