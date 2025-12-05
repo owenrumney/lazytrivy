@@ -7,7 +7,6 @@ on:
 
 jobs:
   build:
-    name: releasing lazytrivy
     runs-on: ubuntu-latest
     env:
       GOCACHE: ${{ github.workspace }}/.gocache
@@ -18,27 +17,18 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Free space
-        run: |
-          echo "Initial disk usage:"
-          df -h
-
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
-
-          # Clean Go caches
-          go clean -cache -modcache -testcache
-          rm -rf ~/.cache/go-build || true
-
-          echo "Disk usage after cleanup:"
-          df -h
-
       - uses: actions/setup-go@v5
         with:
           go-version-file: ./go.mod
-      - run: go version
+
+      - name: Free space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
+          go clean -cache -modcache -testcache
+          rm -rf ~/.cache/go-build || true
+          df -h
 
       - name: Release
         uses: goreleaser/goreleaser-action@v6
