@@ -31,7 +31,7 @@ builds:
 archives:
   - formats: [binary]
     # this name template makes the OS and Arch compatible with the results of `uname`.
-    name_template: "{{ .Binary}}-{{ .OS }}-{{ .Arch }}" 
+    name_template: "{{ .Binary}}-{{ .Os }}-{{ .Arch }}" 
 
 release:
   github:
