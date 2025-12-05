@@ -26,7 +26,6 @@ jobs:
           df -h
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost
           sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
-          go clean -cache -modcache -testcache
           rm -rf ~/.cache/go-build || true
           df -h
 
