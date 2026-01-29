@@ -49,6 +49,14 @@ homebrew_casks:
     description: A simple CLI tool to run Trivy scans interactively with sensible defaults.
     binaries:
       - lazytrivy
+
+    hooks:
+      post:
+        install: |
+          # Remove quarantine attribute to avoid Gatekeeper issues
+          system_command "/usr/bin/xattr",
+                         args: ["-cr", staged_path.to_s],
+                         sudo: false
     repository:
       owner: owenrumney
       name: homebrew-tools
