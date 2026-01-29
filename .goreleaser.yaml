@@ -42,3 +42,15 @@ release:
     ---
 
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+
+homebrew_casks:
+  - name: lazytrivy
+    homepage: https://github.com/owenrumney/lazytrivy
+    description: A simple CLI tool to run Trivy scans interactively with sensible defaults.
+    binaries:
+      - lazytrivy
+    repository:
+      owner: owenrumney
+      name: homebrew-tools
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"

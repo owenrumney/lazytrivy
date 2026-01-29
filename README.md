@@ -34,8 +34,14 @@ Trivy will periodically download the latest vulnerability database. lazytrivy ma
 
 ## Installation
 
+### Install with Homebrew (Recommended)
 
-#### Install with Go
+```
+brew tap owenrumney/tools
+brew install --cask lazytrivy
+```
+
+### Install with Go
 
 If you have Go installed:
 
@@ -43,12 +49,12 @@ If you have Go installed:
 go install github.com/owenrumney/lazytrivy@latest
 ```
 
-#### Download from Releases
+### Download from Releases
 
 Get the latest releases from [GitHub](https://github.com/owenrumney/lazytrivy/releases)
 
 
-### Config
+## Config
 
 Optionally, add a config file at `~/.config/lazytrivy/config.yml`:
 
@@ -64,7 +70,7 @@ debug: true
 trace: false
 ```
 
-#### Config via UI
+### Config via UI
 
 Settings can be adjusted via the UI by pressing the `,` key at any time.
 
@@ -94,12 +100,12 @@ Flags:
 Use `lazytrivy [command] --help` for more information about a command.
 
 
-### Viewing logs
+## Viewing logs
 
 Logs are generated in `$HOME/.lazytrivy/logs/lazytrivy.log` (default level: `info`). Use the `--debug` flag for more details, or `--trace` for verbose output.
 
 
-### Starting in a specific mode
+## Starting in a specific mode
 
 You can start `lazytrivy` in a specific mode using `image`, `filesystem`, or `k8s`:
 
