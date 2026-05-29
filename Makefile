@@ -5,8 +5,9 @@ quality:
 
 .PHONY: test
 test:
-	go test -v ./...
+	GOEXPERIMENT=jsonv2 go test -v ./...
 
 .PHONY: run
 run:
 	go run .
+

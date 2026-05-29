@@ -22,7 +22,7 @@ func Configure() {
 	_ = os.MkdirAll(logDir, os.ModePerm)
 
 	logFile := filepath.Join(logDir, "lazytrivy.log")
-	debugFile, _ = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600) // nolint: nosnakecase
+	debugFile, _ = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0o600) // nolint: nosnakecase
 }
 
 func EnableDebugging() {
@@ -37,7 +37,6 @@ func Tracef(format string, args ...interface{}) {
 	if traceEnabled {
 		logf("TRACE", format, args...)
 	}
-
 }
 
 func Debugf(format string, args ...interface{}) {
@@ -54,7 +53,6 @@ func Errorf(format string, args ...interface{}) {
 	logf("ERROR", format, args...)
 }
 
-func logf(level string, format string, args ...interface{}) {
-	_, _ = fmt.Fprintf(debugFile, fmt.Sprintf("%s\t[%s]\t", time.Now().Format(time.RFC3339), level)+fmt.Sprintf(format, args...))
-	_, _ = fmt.Fprintln(debugFile)
+func logf(level string, format string, args ...any) {
+	_, _ = fmt.Fprintf(debugFile, "%s\t[%s]\t%s\n", time.Now().Format(time.RFC3339), level, fmt.Sprintf(format, args...))
 }
