@@ -10,6 +10,7 @@ var helpCommands = []string{
 	"",
 	tml.Sprintf(" <blue>[s]</blue>can              Scan selected image"),
 	tml.Sprintf(" scan <blue>[a]</blue>ll          Scan all images"),
+	tml.Sprintf(" <blue>[/]</blue> filter          Filter image list"),
 	tml.Sprintf(" <blue>[r]</blue>emote            Scan remote image"),
 	tml.Sprintf(" <blue>[i]</blue>mage refresh     Refresh image list"),
 	"",
