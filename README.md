@@ -1,14 +1,9 @@
-
 [![Go Report Card](https://goreportcard.com/badge/github.com/owenrumney/lazytrivy)](https://goreportcard.com/report/github.com/owenrumney/lazytrivy)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/owenrumney/lazytrivy/blob/master/LICENSE)
-[![Github Release](https://img.shields.io/github/release/owenrumney/lazytrivy.svg)](https://github.com/owenrumney/lazytrivy/releases)
-[![GitHub All Releases](https://img.shields.io/github/downloads/owenrumney/lazytrivy/total)](https://github.com/owenrumney/lazytrivy/releases)
 
 # lazytrivy
 
-
 lazytrivy is a terminal UI wrapper for [Trivy](https://github.com/aquasecurity/trivy) that lets you run Trivy scans without remembering all the command arguments. It now uses the latest Trivy binary directly (no Docker image required).
-
 
 Inspired by [Jesse Duffield](https://github.com/jesseduffield)'s superb tools (lazydocker, lazynpm, lazygit).
 
@@ -21,16 +16,13 @@ Inspired by [Jesse Duffield](https://github.com/jesseduffield)'s superb tools (l
 - **File System Scanning**
   - Scan a filesystem for vulnerabilities, misconfigurations, and secrets
 - **Kubernetes Scanning (Experimental)**
-  - Scan K8s resources for vulnerabilities and misconfigurations *(experimental, subject to user feedback)*
-
+  - Scan K8s resources for vulnerabilities and misconfigurations _(experimental, subject to user feedback)_
 
 ## What does it do?
 
 lazytrivy provides a fast, interactive terminal UI for running Trivy scans. It displays results in a clear, navigable interface and helps you select images, filesystems, or Kubernetes resources to scan. Trivy is run directly (no Docker required), so you always get the latest features and performance.
 
 Trivy will periodically download the latest vulnerability database. lazytrivy maintains a cache, but if you experience a delay, it's likely Trivy is updating its DB.
-
-
 
 ## Installation
 
@@ -52,7 +44,6 @@ go install github.com/owenrumney/lazytrivy@latest
 ### Download from Releases
 
 Get the latest releases from [GitHub](https://github.com/owenrumney/lazytrivy/releases)
-
 
 ## Config
 
@@ -78,7 +69,6 @@ Settings can be adjusted via the UI by pressing the `,` key at any time.
 
 By setting `debug` to true, additional logs will be generated in `/tmp/lazytrivy.log`
 
-
 ## Usage
 
 `lazytrivy` is easy to use. Run it with:
@@ -88,22 +78,22 @@ lazytrivy --help
 ```
 
 Available Commands:
-- `image`       Launch lazytrivy in image scanning mode
-- `filesystem`  Launch lazytrivy in filesystem scanning mode
-- `k8s`         Launch lazytrivy in Kubernetes scanning mode *(experimental)*
-- `help`        Help about any command
+
+- `image` Launch lazytrivy in image scanning mode
+- `filesystem` Launch lazytrivy in filesystem scanning mode
+- `k8s` Launch lazytrivy in Kubernetes scanning mode _(experimental)_
+- `help` Help about any command
 
 Flags:
-- `--debug`     Launch with debug logging
-- `--trace`     Launch with trace logging
+
+- `--debug` Launch with debug logging
+- `--trace` Launch with trace logging
 
 Use `lazytrivy [command] --help` for more information about a command.
-
 
 ## Viewing logs
 
 Logs are generated in `$HOME/.lazytrivy/logs/lazytrivy.log` (default level: `info`). Use the `--debug` flag for more details, or `--trace` for verbose output.
-
 
 ## Starting in a specific mode
 
@@ -121,17 +111,20 @@ To scan Kubernetes resources (experimental):
 lazytrivy k8s --context my-kube-context
 ```
 
-
 ## Screenshots
 
 ### Image Scanning
+
 ![Image Scanning](./.github/images/image_scanning.png)
 
 ### Filesystem Scanning
+
 ![Filesystem Scanning](./.github/images/filesystem_scanning.png)
 
 ### Kubernetes Scanning (Experimental)
+
 ![K8s Scanning](./.github/images/kubernetes_scanning.png)
 
 ### Settings
+
 ![Settings](./.github/images/settings.png)
