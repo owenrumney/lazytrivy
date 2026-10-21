@@ -1,6 +1,6 @@
 module github.com/owenrumney/lazytrivy
 
-go 1.26.3
+go 1.26.10
 
 require (
 	github.com/aquasecurity/trivy v0.71.1
